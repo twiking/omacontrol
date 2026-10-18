@@ -47,6 +47,11 @@ BarWidget {
     return on
   }
 
+  // Keep the tooltip complete when the bar already has a Stay awake indicator.
+  readonly property bool showStayAwakeBadge: setting("showStayAwakeBadge", true) !== false
+  readonly property int badgeCount: switchedOn.length
+    - (!showStayAwakeBadge && switches.awake === true ? 1 : 0)
+
   // Offline outranks the count: it is the one thing on the badge that is a
   // problem rather than a choice. Null means NetworkManager could not be
   // asked, which says nothing about the connection, so it marks nothing.
@@ -114,7 +119,7 @@ BarWidget {
   // bar gives a widget one icon slot, and widening it for a badge would shove
   // the whole section sideways every time one came on.
   Rectangle {
-    visible: root.offline || root.batteryLow || root.lowDevices.length > 0 || root.switchedOn.length > 0
+    visible: root.offline || root.batteryLow || root.lowDevices.length > 0 || root.badgeCount > 0
     anchors.top: button.top
     anchors.left: button.horizontalCenter
     anchors.leftMargin: Style.space(1)
@@ -133,7 +138,7 @@ BarWidget {
       text: root.offline ? "\udb81\uddaa"
         : root.batteryLow ? "\udb80\udc83"
         : root.lowDevices.length > 0 ? "\udb82\udd4b"
-        : String(root.switchedOn.length)
+        : String(root.badgeCount)
       textFormat: Text.PlainText
       color: Color.bar.background
       font.family: Style.font.family

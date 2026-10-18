@@ -20,6 +20,18 @@
     "description": "Opens the OmaControl window.",
     "category": "System",
     "allowMultiple": false,
-    "defaultSection": "right"
+    "defaultSection": "right",
+    "defaults": {
+      "showStayAwakeBadge": true
+    },
+    "schema": [
+      {
+        "key": "showStayAwakeBadge",
+        "type": "boolean",
+        "label": "Count Stay awake in the badge",
+        "description": "Turn off if your bar already shows a Stay awake indicator. Network and battery warnings still appear.",
+        "defaultValue": true
+      }
+    ]
   }
 }
