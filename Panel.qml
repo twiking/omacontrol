@@ -47,10 +47,9 @@ BarWidget {
     return on
   }
 
-  // Keep the tooltip complete when the bar already has a Stay awake indicator.
-  readonly property bool showStayAwakeBadge: setting("showStayAwakeBadge", true) !== false
-  readonly property int badgeCount: switchedOn.length
-    - (!showStayAwakeBadge && switches.awake === true ? 1 : 0)
+  // The tooltip stays complete even when the bar's indicators cover these modes.
+  readonly property int badgeCount: setting("showActiveSwitchCount", true) !== false
+    ? switchedOn.length : 0
 
   // Offline outranks the count: it is the one thing on the badge that is a
   // problem rather than a choice. Null means NetworkManager could not be

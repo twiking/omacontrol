@@ -107,19 +107,19 @@ $P/bin/omacontrol-migrate --apply    # carries it out
 Click the gear in the bar to open the window, or find it in the launcher as
 OmaControl.
 
-### Stay awake badge
+### Active-switch count
 
-The gear counts Stay awake by default. If your bar already shows Omarchy's
-Stay awake indicator, turn off **Count Stay awake in the badge** in the
-widget's settings, or run:
+The gear counts Night light, Do not disturb and Stay awake by default.
+If you use Omarchy's indicators for these modes, turn off
+**Show active-switch count** in the widget's settings, or run:
 
 ```sh
-omarchy bar set io.github.twiking.omacontrol showStayAwakeBadge false --json
+omarchy bar set io.github.twiking.omacontrol showActiveSwitchCount false --json
 ```
 
-Night light and Do not disturb still count. Network and battery warnings
-still appear, and the tooltip still reports Stay awake. Set the same option
-to `true` to count it again.
+Network and battery warnings still appear. The tooltip still lists every
+active mode, including any you don't show in Omarchy's indicators. Set the
+same option to `true` to restore the count.
 
 ## How it writes
 

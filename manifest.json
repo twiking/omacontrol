@@ -22,14 +22,14 @@
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
-      "showStayAwakeBadge": true
+      "showActiveSwitchCount": true
     },
     "schema": [
       {
-        "key": "showStayAwakeBadge",
+        "key": "showActiveSwitchCount",
         "type": "boolean",
-        "label": "Count Stay awake in the badge",
-        "description": "Turn off if your bar already shows a Stay awake indicator. Network and battery warnings still appear.",
+        "label": "Show active-switch count",
+        "description": "Count Night light, Do not disturb and Stay awake on the gear. Network and battery warnings appear even when this is off.",
         "defaultValue": true
       }
     ]
