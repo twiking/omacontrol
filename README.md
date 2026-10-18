@@ -110,8 +110,8 @@ OmaControl.
 ### Active-switch count
 
 The gear counts Night light, Do not disturb and Stay awake by default.
-If you use Omarchy's indicators for these modes, turn off
-**Show active-switch count** in the widget's settings, or run:
+If you use Omarchy's indicators for these modes, open **Bar → OmaControl**
+and turn off **Show active-switch count**. You can also run:
 
 ```sh
 omarchy bar set io.github.twiking.omacontrol showActiveSwitchCount false --json

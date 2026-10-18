@@ -23,6 +23,9 @@ setting_current() {
     bar-position) jq -r '.bar.position // "top"' <<<"$(read_shell_json)" ;;
     bar-transparent) jq -r '((.bar.transparent // false) | tostring)' <<<"$(read_shell_json)" ;;
     bar-center-anchor) jq -r '.bar.centerAnchor // ""' <<<"$(read_shell_json)" ;;
+    bar-active-switch-count)
+      jq -r '[ (.bar.layout // {})[][]? | select(.id == "io.github.twiking.omacontrol")
+        | .showActiveSwitchCount ] | first | . != false' <<<"$(read_shell_json)" ;;
     idle-screensaver) jq -r '.idle.screensaver // empty' <<<"$(read_shell_json)" ;;
     idle-lock) jq -r '.idle.lock // empty' <<<"$(read_shell_json)" ;;
     *) return 1 ;;
@@ -170,6 +173,10 @@ set_key_apply() {
     bar-center-anchor)
       [[ -n $value ]] || die "no widget id given"
       edit_shell_json '.bar = ((.bar // {}) | .centerAnchor = $id)' --arg id "$value" ;;
+    bar-active-switch-count)
+      [[ $value == true || $value == false ]] || die "'$value' is not true or false"
+      edit_shell_json '(.bar.layout[][] | select(.id == "io.github.twiking.omacontrol"))
+        .showActiveSwitchCount = $enabled' --argjson enabled "$value" ;;
     idle-screensaver|idle-lock)
       local field=${key#idle-}
       [[ $value =~ ^[0-9]+$ ]] || die "'$value' is not a number of seconds"

@@ -79,6 +79,20 @@ Ui.SectionBody {
     }
   }
 
+  Ui.SettingGroup {
+    title: "OmaControl"
+
+    Ui.SwitchRow {
+      label: "Show active-switch count"
+      description: "Count Night light, Do not disturb and Stay awake on the gear. Network and battery warnings still appear when this is off."
+      enabled: page.inBar("io.github.twiking.omacontrol")
+      checked: page.app.barState.activeSwitchCount !== false
+      onRequested: function(next) { page.app.set("bar-active-switch-count", next ? "true" : "false") }
+      changed: page.app.isChanged("bar-active-switch-count")
+      onResetRequested: page.app.resetSetting("bar-active-switch-count")
+    }
+  }
+
   // Every bar widget appears once on this page: under the section it sits in,
   // or — if it is disabled — in the group at the foot. A list of switches
   // beside the three section lists would have named each widget twice and left

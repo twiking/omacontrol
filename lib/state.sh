@@ -52,16 +52,17 @@ BAR_STATE_JQ='{
   position: (($cfg.bar.position // "top") | tostring),
   transparent: (($cfg.bar.transparent // false) == true),
   centerAnchor: (($cfg.bar.centerAnchor // "") | tostring),
+  activeSwitchCount: ([ ($cfg.bar.layout // {})[][]?
+    | select(.id == "io.github.twiking.omacontrol") | .showActiveSwitchCount ] | first | . != false),
   # Just the ids, in bar order: the window pairs them with the plugin
-  # list for names, and per-widget settings stay in shell.json where
-  # only the widget itself cares about them.
+  # list for names. Settings needed by this page are read separately;
+  # the rest stay in shell.json for the widget to read.
   layout: {
     left: [($cfg.bar.layout.left // [])[] | .id],
     center: [($cfg.bar.layout.center // [])[] | .id],
     right: [($cfg.bar.layout.right // [])[] | .id]
   },
-  # The one exception, and only because the page has to show it: a
-  # spacer is nothing but its width, so a row cannot describe itself
+  # A spacer is nothing but its width, so a row cannot describe itself
   # without it. Null for every other widget, and in step with the ids
   # above, since a spacer is named by its place rather than by an id.
   # The settings of a widget are the keys of its layout entry beside the
