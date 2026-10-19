@@ -28,22 +28,26 @@ OMACONTROL_READ_MAX=${OMACONTROL_READ_MAX:-4194304}
 # the pipe — Omarchy's nightlight toggle does, with hyprsunset. Waiting for the
 # end then waits for the daemon, and the window, which runs one command at a
 # time, stops answering. So the wait is for the producer, and the reader gets a
-# moment to drain what it wrote before it is let go.
+# moment to drain what it wrote; after that the answer is taken as it stands.
 #
-# Still a pipe, and not a file read afterwards: `head` stops a producer at the
-# cap, and a file is only cut down once the producer is done. `yes` fills a
-# gigabyte of /tmp, which is memory, every fifth of a second.
+# The reader is never killed, and goes on swallowing whatever comes after the
+# cap. A daemon left holding a pipe nobody reads dies of SIGPIPE on its next
+# log line: hyprsunset did, a request after it was switched on. `stdbuf -o0`
+# so what `head` has read is in the file when the wait gives up on it.
 #
-# `stdbuf -o0` because the reader may be killed: what `head` holds in stdio's
-# buffer would go with it. The status is the producer's, as it was through
-# `pipefail`, so a reader that failed is told apart from one that said nothing.
+# Still a pipe, and not a file read afterwards: a file is only cut down once
+# the producer is done, and `yes` fills a gigabyte of /tmp, which is memory,
+# every fifth of a second. Past the cap it goes nowhere.
+#
+# The status is the producer's, as it was through `pipefail`, so a producer
+# that failed is told apart from one that said nothing.
 OMACONTROL_READ_DRAIN=${OMACONTROL_READ_DRAIN:-1}
 
 read_bounded() {
-  local how=$1 seconds=$2 out pipe reader rc
+  local how=$1 seconds=$2 out pipe reader drain rc
   shift 2
   out=$(mktemp) || return 1
-  exec {pipe}> >(exec stdbuf -o0 head -c "$OMACONTROL_READ_MAX" >"$out")
+  exec {pipe}> >(exec >/dev/null 2>&1; stdbuf -o0 head -c "$OMACONTROL_READ_MAX" >"$out"; exec cat)
   reader=$!
   if [[ $how == err ]]; then
     timeout "$seconds" "$@" >&"$pipe" 2>&1
@@ -52,9 +56,10 @@ read_bounded() {
   fi
   rc=$?
   exec {pipe}>&-
-  ( sleep "$OMACONTROL_READ_DRAIN"; kill "$reader" ) >/dev/null 2>&1 &
-  wait "$reader" 2>/dev/null
-  kill $! 2>/dev/null
+  sleep "$OMACONTROL_READ_DRAIN" >/dev/null 2>&1 &
+  drain=$!
+  wait -n "$reader" "$drain" 2>/dev/null
+  kill "$drain" 2>/dev/null
   head -c "$OMACONTROL_READ_MAX" "$out"
   rm -f "$out"
   return "$rc"

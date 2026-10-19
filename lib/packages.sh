@@ -381,12 +381,12 @@ packages_info() {
     '%n\t%v\t%m\t%w\t%l\t%u\t%N\t%d' -- "$name" | head -n1)
   [[ -n $row ]] || { echo '{}'; return; }
 
-  # Read first, tested second. `capture` is itself a pipeline and `grep -q`
-  # stops at the first match, so the write that `head` then loses makes
-  # `capture … | grep -q` report the *producer's* failure — and `|| echo false`
-  # fires on a match. It passes on a machine with twenty AUR packages and
-  # flips silently on one with three hundred, which is the machine this module
-  # already caters for. The value decides, never the exit status.
+  # Read first, tested second. `grep -q` stops at the first match, and under
+  # `pipefail` the write it then refuses makes `… | grep -q` report a failure
+  # — so `|| echo false` fires on a match. It passes on a machine with twenty
+  # AUR packages and flips silently on one with three hundred, which is the
+  # machine this module already caters for. The value decides, never the exit
+  # status.
   local mine foreign=false
   mine=$(capture pacman -Qqm)
   grep -Fxq -- "$name" <<<"$mine" && foreign=true

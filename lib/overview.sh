@@ -343,7 +343,7 @@ overview_cmd() {
         # setter is where that is put right.
         nightlight)
           if [[ $(nightlight_enabled) == true ]]; then set_key_apply nightlight false
-          else capture_err omarchy-toggle-nightlight; fi ;;
+          else omarchy-toggle-nightlight >/dev/null 2>&1; fi ;;
         dnd) capture_err omarchy-toggle-notification-silencing ;;
         awake) capture_err omarchy-toggle-idle ;;
         dictation) setsid -f voxtype record toggle >/dev/null 2>&1 ;;
