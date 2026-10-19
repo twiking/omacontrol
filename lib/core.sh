@@ -23,9 +23,44 @@ die() { echo "omacontrol: $*" >&2; exit 1; }
 OMACONTROL_READ_TIMEOUT=${OMACONTROL_READ_TIMEOUT:-5}
 OMACONTROL_READ_MAX=${OMACONTROL_READ_MAX:-4194304}
 
-capture() {
-  timeout "$OMACONTROL_READ_TIMEOUT" "$@" 2>/dev/null | head -c "$OMACONTROL_READ_MAX"
+# A pipe ends when the last writer closes it, not when the producer exits, and
+# a command that backgrounds a daemon without redirecting it hands that daemon
+# the pipe — Omarchy's nightlight toggle does, with hyprsunset. Waiting for the
+# end then waits for the daemon, and the window, which runs one command at a
+# time, stops answering. So the wait is for the producer, and the reader gets a
+# moment to drain what it wrote before it is let go.
+#
+# Still a pipe, and not a file read afterwards: `head` stops a producer at the
+# cap, and a file is only cut down once the producer is done. `yes` fills a
+# gigabyte of /tmp, which is memory, every fifth of a second.
+#
+# `stdbuf -o0` because the reader may be killed: what `head` holds in stdio's
+# buffer would go with it. The status is the producer's, as it was through
+# `pipefail`, so a reader that failed is told apart from one that said nothing.
+OMACONTROL_READ_DRAIN=${OMACONTROL_READ_DRAIN:-1}
+
+read_bounded() {
+  local how=$1 seconds=$2 out pipe reader rc
+  shift 2
+  out=$(mktemp) || return 1
+  exec {pipe}> >(exec stdbuf -o0 head -c "$OMACONTROL_READ_MAX" >"$out")
+  reader=$!
+  if [[ $how == err ]]; then
+    timeout "$seconds" "$@" >&"$pipe" 2>&1
+  else
+    timeout "$seconds" "$@" >&"$pipe" 2>/dev/null
+  fi
+  rc=$?
+  exec {pipe}>&-
+  ( sleep "$OMACONTROL_READ_DRAIN"; kill "$reader" ) >/dev/null 2>&1 &
+  wait "$reader" 2>/dev/null
+  kill $! 2>/dev/null
+  head -c "$OMACONTROL_READ_MAX" "$out"
+  rm -f "$out"
+  return "$rc"
 }
+
+capture() { read_bounded out "$OMACONTROL_READ_TIMEOUT" "$@"; }
 
 # A directory walk is not a read, and five seconds is not its budget.
 #
@@ -40,7 +75,7 @@ OMACONTROL_WALK_TIMEOUT=${OMACONTROL_WALK_TIMEOUT:-120}
 capture_for() {
   local seconds=$1
   shift
-  timeout "$seconds" "$@" 2>/dev/null | head -c "$OMACONTROL_READ_MAX"
+  read_bounded out "$seconds" "$@"
 }
 
 # ---------------------------------------------------------- asked together
@@ -91,9 +126,7 @@ par_end() {
 
 # Same bounds, but the tool's own complaint is what the caller is after: a
 # validator that rejects a write has to be able to say why.
-capture_err() {
-  timeout "$OMACONTROL_READ_TIMEOUT" "$@" 2>&1 | head -c "$OMACONTROL_READ_MAX"
-}
+capture_err() { read_bounded err "$OMACONTROL_READ_TIMEOUT" "$@"; }
 
 # Reading someone else's file means reading a name, and a name is not a
 # promise: between the test and the open it can become a symlink somewhere

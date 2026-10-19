@@ -170,7 +170,9 @@ set_key_apply() {
         hyprctl hyprsunset identity >/dev/null 2>&1
         omarchy-shell -q nightlight refresh >/dev/null 2>&1
       else
-        [[ $(nightlight_enabled) == "$value" ]] || omarchy-toggle-nightlight
+        # The toggle starts hyprsunset without redirecting it, and a daemon
+        # left holding our stdout keeps bin/omacontrol's output open for ever.
+        [[ $(nightlight_enabled) == "$value" ]] || omarchy-toggle-nightlight >/dev/null 2>&1
       fi ;;
     bar-position)
       case $value in

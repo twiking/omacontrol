@@ -36,6 +36,15 @@ at once and the window received none of it until the buffer filled or the
 watcher died. Every test that runs a watcher to completion passes either way;
 only reading its first line while it is still running shows the difference.
 
+**A pipe ends when its last writer closes it, not when the producer exits.**
+A command that backgrounds a daemon without redirecting it hands the daemon
+the pipe, and a reader waiting for the end waits for the daemon.
+`omarchy-toggle-nightlight` does it with hyprsunset; through a bare
+`cmd | head -c` the window stopped answering every click after it. `capture`
+waits for the producer instead, and gives the reader a moment to drain — and a
+command run outside `capture` that can start a daemon gets `>/dev/null 2>&1`,
+or it holds `bin/omacontrol`'s own output open.
+
 ## Two budgets, and which one a read gets
 
 Every read of the compositor or the system goes through `capture`, bounded by
