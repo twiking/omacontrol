@@ -2,6 +2,10 @@ pragma Singleton
 
 import QtQuick
 import qs.Commons
+// Named as well: Qt 6.12 gave QtQuick a `Color` value type of its own, and an
+// unversioned `import QtQuick` wins a bare `Color` — every colour here came
+// back undefined and the window drew black on black.
+import qs.Commons as Commons
 
 // One place for the colours and type the window is drawn in.
 //
@@ -14,12 +18,12 @@ import qs.Commons
 QtObject {
   id: palette
 
-  readonly property color foreground: Color.popups.text
+  readonly property color foreground: Commons.Color.popups.text
   // Popup surfaces are allowed to be translucent; a window full of text is
   // not, so the same colour is taken at full opacity.
-  readonly property color background: Qt.rgba(Color.popups.background.r, Color.popups.background.g, Color.popups.background.b, 1)
-  readonly property color accent: Color.accent
-  readonly property color urgent: Color.urgent
+  readonly property color background: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
+  readonly property color accent: Commons.Color.accent
+  readonly property color urgent: Commons.Color.urgent
 
   // A charge level is red, amber or green in every window that has ever shown
   // one, and a theme supplies only the red. The other two are struck from that

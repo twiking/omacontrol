@@ -15,6 +15,13 @@ paths:
 - **Don't import `QtQuick.Controls` alongside `qs.Ui`.** Both export `Button`
   and `TextField`; the ambiguity fails the whole file, and the shell reports it
   as the useless "File name case mismatch".
+- **Never write a bare `Color`.** Qt 6.12 gave QtQuick a `Color` value type,
+  and an unversioned `import QtQuick` wins the name over `qs.Commons`'s
+  singleton: every colour comes back undefined, the window draws black on
+  black, and the journal says only `Cannot read property 'text' of undefined`.
+  Pages and `ui/` read colours from `Palette`; `Palette.qml` and `Panel.qml`
+  read the theme as `Commons.Color`, through `import qs.Commons as Commons`.
+  On Qt 6.11 the bare name still works, so nothing here will show it.
 - **The `Palette` singleton needs an explicit directory import.** Files in
   `ui/` use `import "." as Local` and `Local.Palette.foreground`; the implicit
   directory import does not resolve it here.

@@ -54,10 +54,8 @@ Item {
   // Settings tracks the foundational palette rather than a themable surface of
   // its own, so it renders consistently under every theme.
   readonly property color foreground: Ui.Palette.foreground
-  // Popup surfaces are allowed to be translucent; a window full of text is
-  // not, so the same colour is taken at full opacity.
-  readonly property color background: Qt.rgba(Color.popups.background.r, Color.popups.background.g, Color.popups.background.b, 1)
-  readonly property color accent: Color.accent
+  readonly property color background: Ui.Palette.background
+  readonly property color accent: Ui.Palette.accent
   readonly property color muted: Qt.rgba(foreground.r, foreground.g, foreground.b, 0.6)
   readonly property color hairline: Qt.rgba(foreground.r, foreground.g, foreground.b, 0.16)
   // The rail beside the page, and the two strips of chrome that frame both
@@ -2626,7 +2624,7 @@ Item {
             Layout.topMargin: 0
             visible: root.lastError !== ""
             text: root.lastError
-            color: Color.urgent
+            color: Ui.Palette.urgent
             wrapMode: Text.WordWrap
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption

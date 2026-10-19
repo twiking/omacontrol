@@ -138,7 +138,7 @@ Item {
       // a peripheral's charge reads the way the machine's own does.
       text: deviceRow.batteryIcon + " " + deviceRow.battery + "%"
       // A device about to die is worth noticing before it dies.
-      color: deviceRow.battery <= 20 ? Color.urgent : Local.Palette.muted
+      color: deviceRow.battery <= 20 ? Local.Palette.urgent : Local.Palette.muted
       font.family: Local.Palette.fontFamily
       font.pixelSize: Style.font.caption
     }

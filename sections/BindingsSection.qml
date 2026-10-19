@@ -91,7 +91,7 @@ Ui.SectionBody {
           (String(clash.description) !== "" ? String(clash.description) : "something else") +
           ". Adding this replaces it."
         : ""
-      color: Color.urgent
+      color: Ui.Palette.urgent
       font.family: Ui.Palette.fontFamily
       font.pixelSize: Style.font.caption
     }

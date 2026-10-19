@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
 import qs.Commons
+// A bare `Color` is QtQuick's own value type on Qt 6.12, not the theme.
+import qs.Commons as Commons
 import qs.Ui
 
 // The bar's way into OmaControl: a gear that opens the window.
@@ -136,7 +138,7 @@ BarWidget {
     width: Math.max(height, count.implicitWidth + Style.space(8))
     height: Style.space(16)
     radius: height / 2
-    color: Color.bar.active
+    color: Commons.Color.bar.active
 
     Text {
       id: count
@@ -150,7 +152,7 @@ BarWidget {
         : root.markDevices ? "\udb82\udd4b"
         : String(root.badgeCount)
       textFormat: Text.PlainText
-      color: Color.bar.background
+      color: Commons.Color.bar.background
       font.family: Style.font.family
       font.pixelSize: Style.font.caption
       font.bold: true
