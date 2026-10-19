@@ -88,9 +88,15 @@ Skip that check and the keystrokes go to the terminal you are working in.
 The window is a **layer surface, not a client**, so its geometry comes from
 `hyprctl layers` — `hyprctl clients` has no entry titled "OmaControl" and the
 crop comes out empty. `grim -g` takes logical coordinates while a full `grim`
-capture is physical pixels and the card is 90% of the screen centred, so the
-script captures the whole screen and crops from that, with the scale read out
-of `hyprctl monitors` rather than assumed.
+capture is physical pixels, so the script captures the window's monitor and
+crops from that, with the scale read out of `hyprctl monitors` rather than
+assumed. The layer's position is in the global layout and is taken relative
+to its monitor first: on a monitor that is not at 0,0 the crop otherwise falls
+outside the capture and the image comes out empty.
+
+The layer covers its whole monitor, so the shot is the whole screen — the
+card and whatever is behind it. The card's width comes from the theme's
+spacing scale, which the script cannot see.
 
 To reach a page without clicking, set `property string pageId` in
 `SettingsWindow.qml` (it defaults to `"overview"`), restart, shoot, and **put

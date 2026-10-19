@@ -1,5 +1,5 @@
 ---
-description: Screenshot the open OmaControl window, cropped to the card
+description: Screenshot the screen the OmaControl window is open on
 argument-hint: "[output path]"
 allowed-tools: Bash(cd:*), Bash(.claude/skills/omacontrol-testing/scripts/shot.sh:*), Bash(omarchy-shell omacontrol:*), Read
 ---
