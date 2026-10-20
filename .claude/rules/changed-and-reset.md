@@ -37,8 +37,10 @@ the same thing: you changed it, and it can go back. `Ctrl+Backspace`, or
 everything at once, after asking — the one action here a second click cannot
 undo.
 
-The live pages are deliberately unmarked: audio, network, bluetooth and power
-move on their own, so "you changed this" would be a guess.
+The live pages are deliberately unmarked: audio, network, bluetooth and the
+Power page's readings, profile and charge limit move on their own, so "you
+changed this" would be a guess. The Power page's timeouts and lid action are
+shell.json settings, and are marked like any other.
 
 Three things this will not forgive:
 

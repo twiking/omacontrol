@@ -15,6 +15,8 @@ manifest.json          Plugin manifest — id, kinds, entry point
 Panel.qml              The bar button; forwards show/hide/toggle to the service
 Service.qml            Owns the window (loaded on first use), the `omacontrol`
                        IPC target, and the launcher entry
+PowerService.qml       The always-on half: enforces the sleep and hibernate
+                       timeouts and the lid action while the window is closed
 SettingsWindow.qml     Window chrome, sidebar, page routing, and the state
                        every page reads. Pages reach it as `app`.
 ui/                    Presentational components + the Palette singleton
@@ -84,6 +86,56 @@ device because the default route points at a VPN tunnel. User-facing strings
 follow the same discipline in reverse: they say what a setting does for the
 reader, never which command runs underneath.
 
+## The Power page
+
+The timeouts group moved here from the Lockscreen page (the menu entry renamed
+from "Idle & Lock"), and the page gained three things Omarchy does not do
+itself.
+
+**Sleep and hibernate timeouts.** Omarchy's idle service reads only
+`idle.screensaver` and `idle.lock` from shell.json, so `idle.suspend` and
+`idle.hibernate` (0 is off) are enforced by the plugin's own always-on
+`PowerService.qml`: an inhibitor-aware IdleMonitor — the same one Omarchy's
+idle service uses — arms one timer per timeout, and the earlier deadline
+wins, because a suspended machine never reaches the later one; the sibling
+timer is stopped when one fires, so an overdue timer cannot fire the moment
+the machine wakes. Stay Awake (`~/.local/state/omarchy/indicators/stay-awake`)
+pauses the timers, as it pauses Omarchy's own. The service reads shell.json
+itself, because the scoped shell API hands a third-party service no live
+shell config. Availability is checked before a row is enabled — logind's
+CanSuspend, Omarchy's own `omarchy-hibernation-available`, which is also what
+Omarchy's menu offers, and `omarchy-hw-laptop` for the lid — and an
+unavailable row is greyed out with a tooltip saying so.
+
+**The lid action.** `omacontrol.lid` in shell.json: nothing, lock, suspend or
+hibernate, with an absent key meaning suspend — Omarchy's default. logind's
+lid action is suspend by default, so for every action but suspend the service
+holds a `handle-lid-switch` inhibitor — one process, `systemd-inhibit`
+wrapping a `gdbus` monitor on logind — and acts on the lid itself, which
+today means hibernate only: lock and nothing are Omarchy's own lid binding
+and its managed replacement. Only "nothing" needs that binding gone (it locks
+the moment the lid closes), so the setter renders a second marked block in
+`bindings.lua` — an `hl.unbind` of Omarchy's lid binding plus a rebind to
+`omarchy-hyprland-monitor-clamshell` alone — and removes it for any other
+action. A docked lid close is clamshell mode, so the hibernate skips it, the
+way logind's own HandleLidSwitchDocked defaults to ignore. The setting is
+tracked like any shell.json value: reset returns to Omarchy's default.
+
+**Charge limits.** The battery's own sysfs thresholds,
+`charge_control_end_threshold` (stop charging at) and
+`charge_control_start_threshold` (begin charging below). They are root-owned
+almost everywhere, so the write goes through `pkexec tee`, answered by
+Omarchy's own polkit agent; the bound (`OMACONTROL_PKEXEC_TIMEOUT`, 60s) is
+what keeps a machine with no agent from hanging the window. A direct write is
+tried first, for setups that make the files user-writable. The kernel refuses
+a start threshold at or above the end one, so lowering the end threshold
+takes the start one down with it (by 5), and raising the start above the end
+is refused. The thresholds are live values, not tracked ones — the page's
+readings, profile and charge limit move on their own, so "you changed this"
+would be a guess — and the limit does not survive a reboot, which the group's
+note says. The page's timeouts and lid action are shell.json settings, and
+are marked like any other.
+
 ## Where each page writes
 
 This app stores almost nothing. Each page writes into whatever owns the
@@ -93,12 +145,13 @@ setting:
 | --- | --- |
 | Windows, Layout, Effects, Groups, Keyboard, Mouse & touchpad, Workspaces | `~/.config/hypr/omacontrol.lua`, loaded last (`omacontrol.conf` on a `.conf` setup) |
 | Appearance | Omarchy's own config, via `omarchy-theme-set`, `omarchy font set`, `omarchy display text size` |
-| Bar, Idle & Lock, Plugins, Settings | `~/.config/omarchy/shell.json` (Plugins also *reads* plugins.omarchy.org, cached) |
+| Bar, Lockscreen, Plugins, Settings | `~/.config/omarchy/shell.json` (Plugins also *reads* plugins.omarchy.org, cached) |
 | Keybindings | a marked block in `~/.config/hypr/bindings.lua` |
 | Compose Keys | `~/.XCompose` |
 | Herdr, Tmux, Neovim | their own configs, edited in place |
 | Displays | `~/.config/hypr/omacontrol.lua`, applied with `hyprctl eval` — plus `monitors.lua` for the laptop panel's scale, and Omarchy's own toggle for turning that panel off |
-| Audio, Network, Bluetooth, Power | nowhere — live system state, owned by PipeWire, NetworkManager, BlueZ and power-profiles-daemon |
+| Power | `~/.config/omarchy/shell.json` (sleep/hibernate timeouts, lid action) and the battery's sysfs charge thresholds, written through polkit — its readings and profile are live state, owned by UPower and power-profiles-daemon |
+| Audio, Network, Bluetooth | nowhere — live system state, owned by PipeWire, NetworkManager and BlueZ |
 | Overview | nowhere — every switch is Omarchy's own command, asked and relayed |
 | Disk, Processes | nowhere — readings, plus the two or three things there are to *do* |
 
