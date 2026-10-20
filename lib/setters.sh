@@ -11,8 +11,10 @@
 # and write that. The window says "changed" for both, because from the outside
 # they are the same thing: you changed it, and it can go back.
 #
-# The live pages are deliberately absent — audio, network, bluetooth, power
-# move on their own, so "changed" would mean nothing there.
+# The live pages are deliberately absent — audio, network, bluetooth, and the
+# Power page's readings, profile and charge limit, move on their own, so
+# "changed" would mean nothing there. The Power page's timeouts and lid
+# action are shell.json settings, and are tracked like any other.
 # The gear's own switches, by setting key. They are keys of its layout entry
 # beside the id, which is where the bar hands a widget its settings.
 gear_field() {
@@ -40,6 +42,15 @@ setting_current() {
         <<<"$(read_shell_json)" ;;
     idle-screensaver) jq -r '.idle.screensaver // empty' <<<"$(read_shell_json)" ;;
     idle-lock) jq -r '.idle.lock // empty' <<<"$(read_shell_json)" ;;
+    # The sleep and hibernate timeouts read 0 rather than empty when absent:
+    # 0 is their off state, and a reset has to be able to write that back.
+    idle-suspend) jq -r '((.idle.suspend // 0) | tonumber? // 0)' <<<"$(read_shell_json)" ;;
+    idle-hibernate) jq -r '((.idle.hibernate // 0) | tonumber? // 0)' <<<"$(read_shell_json)" ;;
+    # Absent means Omarchy's default lid action, which is "suspend".
+    lid-action) read_shell_json | jq -r '
+      (.omacontrol.lid // "suspend")
+      | if . == "nothing" or . == "lock" or . == "suspend" or . == "hibernate"
+        then . else "suspend" end' ;;
     *) return 1 ;;
   esac
 }
@@ -191,11 +202,21 @@ set_key_apply() {
       [[ $value == true || $value == false ]] || die "'$value' is not true or false"
       edit_shell_json '(.bar.layout[]?[]? | select(.id == "io.github.twiking.omacontrol"))
         |= (.[$field] = $enabled)' --arg field "$(gear_field "$key")" --argjson enabled "$value" ;;
-    idle-screensaver|idle-lock)
+    idle-screensaver|idle-lock|idle-suspend|idle-hibernate)
       local field=${key#idle-}
+      # 0 is a real value for the sleep and hibernate timeouts: it switches
+      # the timer off, which is how they read when they were never set.
       [[ $value =~ ^[0-9]+$ ]] || die "'$value' is not a number of seconds"
       edit_shell_json '.idle = ((.idle // {}) | .[$field] = ($seconds | tonumber))' \
         --arg field "$field" --arg seconds "$value" ;;
+    lid-action)
+      case $value in
+        nothing|lock|suspend|hibernate) ;;
+        *) die "bad lid action '$value'" ;;
+      esac
+      edit_shell_json '.omacontrol = ((.omacontrol // {}) | .lid = $action)' \
+        --arg action "$value"
+      render_lid_override ;;
     # "<output>=<value>": both are per display, and the window sends the one
     # the user picked rather than assuming a single screen.
     monitor-scale|monitor-mode)

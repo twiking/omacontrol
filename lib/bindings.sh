@@ -116,6 +116,54 @@ edit_bindings() {
   render_bindings
 }
 
+# ------------------------------------------------------------- the lid override
+#
+# Omarchy's own lid binding locks the moment the lid closes, which is what
+# "lock" wants but what "nothing" cannot have. So while the lid action is
+# "nothing", a second marked block unbinds Omarchy's lid binding and keeps
+# only the clamshell monitor reconciliation that binding also performs. Every
+# other action leaves Omarchy's binding in place, and the block goes away.
+# The block is driven by shell.json rather than the store, because the action
+# lives there, and it is rendered with the same marker discipline as the
+# keybindings block: each render touches only its own markers, so the two
+# never eat each other.
+LID_BEGIN="-- >>> omacontrol lid (generated; edit it in OmaControl)"
+LID_END="-- <<< omacontrol lid"
+LID_BLOCK='hl.unbind("switch:on:Lid Switch")
+o.bind("switch:on:Lid Switch", nil, "omarchy-hyprland-monitor-clamshell", { locked = true })'
+
+render_lid_override() {
+  local action target body
+  action=$(read_shell_json | jq -r '.omacontrol.lid // "suspend"')
+  target=$BINDINGS_LUA
+  [[ -f $target ]] || return 0
+
+  if [[ $action == nothing ]]; then body=$LID_BLOCK; else body=""; fi
+
+  backup_once "$target"
+
+  OMACONTROL_BODY=$body awk -v begin_marker="$LID_BEGIN" -v end_marker="$LID_END" '
+    BEGIN { inside = 0; seen = 0; body = ENVIRON["OMACONTROL_BODY"] }
+    $0 == begin_marker { inside = 1; seen = 1; if (body != "") { print; print body } next }
+    $0 == end_marker { inside = 0; if (body != "") print; next }
+    inside { next }
+    { print }
+    END {
+      if (!seen && body != "") {
+        print ""
+        print begin_marker
+        print body
+        print end_marker
+      }
+    }
+  ' "$target" | awk '
+    /^[[:space:]]*$/ { pending = pending $0 "\n"; next }
+    { printf "%s", pending; pending = ""; print }
+  ' | write_file "$target" managed
+
+  hyprctl reload >/dev/null 2>&1 || true
+}
+
 # Every binding Hyprland currently has, as Omarchy reads them, marked with
 # where it came from so the window can offer the right action.
 bindings_state() {
