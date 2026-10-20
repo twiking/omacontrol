@@ -235,7 +235,7 @@ the machine. Two sources answer it, and both are the network:
 
 | Source | Holds |
 | --- | --- |
-| `https://plugins.omarchy.org/catalog.json` | author, version, category, licence, `verificationStatus`, GitHub stars, repo URL, and `status` — the catalogue's own word for whether the plugin still installs |
+| `https://plugins.omarchy.org/catalog.json` | author, version, category, licence, `verificationStatus` and the `verificationCommit` it covers, GitHub stars, repo URL, and `status` — the catalogue's own word for whether the plugin still installs |
 | `https://api.omarchyplugins.com/v1/stats` | hearts, views, copies |
 
 Both are overridable (`OMACONTROL_PLUGIN_CATALOG_URL`,
@@ -250,12 +250,43 @@ Both are overridable (`OMACONTROL_PLUGIN_CATALOG_URL`,
   truncates, jq refuses the fragment, and the last good answer stands. Every
   failure here is the same shape — a request that did not arrive leaves the
   previous answer rather than reporting every plugin unlisted.
-- **The match is the plugin's id and nothing else.** The id is the manifest's,
-  the directory is named after it, and the catalogue read that same manifest,
-  so the join is exact by construction. Matching a fork on its *remote* was
-  considered and rejected: a fork that changed its id is genuinely not the
-  listed plugin, and handing it someone else's verification is the one mistake
-  a badge like this must not make.
+- **The id finds the listing; the copy has to earn it.** This used to be a
+  join on the id alone, and a marketplace maintainer reviewing OmaControl's own
+  submission sent it back for that: a fork that kept the id, or a copy edited
+  where it sits, wore the original's Verified badge without any of its code
+  having been looked at. A listing is a repository and a verification is one
+  commit of it (`verificationCommit`), so:
+  - a copy gets the listing — author, stars, hearts, the Repository row —
+    only when its `origin` is the listed repository, compared as
+    host/owner/name in any spelling git accepts. Omarchy's own plugins are the
+    exception: the namespace is reserved and the package installs them, so
+    there is no clone to ask.
+  - it gets the badge only at the verified commit with its files unchanged:
+    `git diff HEAD` clean, and nothing untracked beyond the plugin's own
+    `.gitignore`. Global excludes do not count, and a plugin's declared build
+    output does not cost it the badge.
+    An untracked `.gitignore` is a change in itself — they are read tracked
+    or not, and one containing `*` hides itself and everything beside it —
+    and so is a file flagged assume-unchanged or skip-worktree.
+  - every other case says which it is — "Listed, this version not verified",
+    "Listed, changed on this machine", "Listed from another repository",
+    "Listed, installed twice" — because each one has a different thing to do
+    about it. A git read that timed out is *not checked*, never *changed*.
+
+  **The local read is keyed by the manifest's id, not the directory's name.**
+  The shell keys plugins the same way, so a fork cloned by hand into a second
+  directory under the same id is loaded *instead of* one of them — and the
+  page, reading the directory named after the id, gave the fork's id the real
+  copy's badge. Two directories claiming one id are `contested` and match no
+  listing.
+
+  `plugin_checkout` asks only a directory with its own `.git` (otherwise git
+  walks up into whatever repository holds it), reads the origin through
+  `git remote get-url` so an `insteadOf` alias resolves, and runs every git
+  call with fsmonitor and replace objects off: with `core.fsmonitor` set
+  globally, as Scalar does, a bare `ls-files` starts a daemon per plugin on
+  every poll. A cache written before the commit was kept counts as owed a
+  refresh, or every badge would vanish for a day.
 - **`ids` records who the last check asked about.** Without it there is no
   telling a plugin the catalogue does not have from one installed since the
   check — and the page would call the second unlisted for a day, which is
