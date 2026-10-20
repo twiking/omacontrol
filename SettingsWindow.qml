@@ -1472,6 +1472,7 @@ Item {
     var name = String(key || "")
     if (name.indexOf("bar-") === 0) return ["bar", "hyprChanged"]
     if (name.indexOf("idle-") === 0) return ["idle", "hyprChanged"]
+    if (name === "lid-action") return ["power", "hyprChanged"]
     if (name.indexOf("monitor") === 0) return ["monitors", "hyprChanged"]
     if (name.indexOf("herdr:") === 0) return ["herdr", "hyprChanged"]
     if (name.indexOf("tmux:") === 0) return ["tmux", "hyprChanged"]
@@ -1657,7 +1658,7 @@ Item {
       // which a desktop has too. A power symbol read as shutting the machine
       // down, and a battery promised a page a desktop does not get.
       { id: "pwr", label: "Power", icon: "\uf0e7", pages: ["power"] },
-      { id: "idle", label: "Idle & Lock", icon: "\uf023", pages: ["idle"] },
+      { id: "idle", label: "Lockscreen", icon: "\uf023", pages: ["idle"] },
       { id: "security", label: "Security", icon: "\uf132", pages: ["security"] },
       { id: "disk", label: "Storage", icon: "\uf0a0", pages: ["disk"] },
       { id: "proc", label: "Processes", icon: "\uf080", pages: ["processes"] },
@@ -1727,7 +1728,7 @@ Item {
     "compose": "Compose Keys",
     "pointer": "Mouse & Touchpad",
     "power": "Power",
-    "idle": "Idle & Lock",
+    "idle": "Lockscreen",
     "security": "Security",
     "disk": "Disk",
     "processes": "Processes",

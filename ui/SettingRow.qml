@@ -28,6 +28,21 @@ NavRow {
   // page that leads with controls gives them one width for the whole list.
   property real leadingWidth: -1
 
+  // Why a switched-off row is switched off, shown on hover. A disabled item
+  // still receives hover events (Qt Quick delivers hover separately from
+  // enabled), so the tooltip works on greyed-out rows.
+  property string tooltip: ""
+
+  HoverHandler {
+    id: rowHover
+    enabled: settingRow.tooltip !== ""
+  }
+
+  PanelToolTip {
+    visible: rowHover.hovered && settingRow.tooltip !== ""
+    text: settingRow.tooltip
+  }
+
   Item {
     id: leadingHolder
     anchors.left: parent.left
