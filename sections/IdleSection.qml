@@ -12,25 +12,6 @@ Ui.SectionBody {
   // Read when the page opens: an unlock screen changes when somebody changes
   // it, so there is nothing here for a timer to watch.
   Component.onCompleted: app.readUnlocks()
-  Ui.SettingGroup {
-    title: "Timeouts"
-
-    Ui.MinutesRow {
-      label: "Screensaver after"
-      seconds: app.idleState.screensaver !== undefined ? Number(app.idleState.screensaver) : 150
-      onCommitted: function(mins) { app.set("idle-screensaver", mins * 60) }
-      changed: app.isChanged("idle-screensaver")
-      onResetRequested: app.resetSetting("idle-screensaver")
-    }
-
-    Ui.MinutesRow {
-      label: "Lock after"
-      seconds: app.idleState.lock !== undefined ? Number(app.idleState.lock) : 300
-      onCommitted: function(mins) { app.set("idle-lock", mins * 60) }
-      changed: app.isChanged("idle-lock")
-      onResetRequested: app.resetSetting("idle-lock")
-    }
-  }
 
   // The unlock screen is a look, so it is chosen by looking — the same
   // pictures the Theme page uses, and the same ones Omarchy's own switcher

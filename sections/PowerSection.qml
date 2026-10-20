@@ -11,6 +11,10 @@ Ui.SectionBody {
 
   readonly property var power: app.power
   readonly property var reading: power.battery !== undefined ? power.battery : ({})
+  readonly property var idle: app.idleState
+  readonly property bool hasBattery: power.hasBattery === true
+  readonly property var charge: power.chargeThreshold !== undefined && power.chargeThreshold !== null
+    ? power.chargeThreshold : null
 
   // Power profiles are named for machines, not people. The icons are the
   // bar's own, from its power widget: the same three glyphs for the same
@@ -247,6 +251,98 @@ Ui.SectionBody {
       font.family: Ui.Palette.fontFamily
       font.pixelSize: Style.font.caption
     }
+  }
+
+  Ui.SettingGroup {
+    title: "Charge limit"
+    note: "Keeps the battery from charging past a chosen level. Applies until the next reboot."
+    visible: !searchEmpty && hasBattery
+
+    Ui.PercentRow {
+      label: "Stop charging at"
+      description: "The level the battery stops charging at, to keep it healthy."
+      value: charge !== null && charge.end !== null ? charge.end / 100 : 1
+      enabled: charge !== null && charge.supported === true
+      tooltip: charge !== null && charge.supported === true
+        ? "" : "This battery does not expose a charge limit"
+      onCommitted: function(next) { app.run(["power", "charge", "end", String(Math.round(next * 100))]) }
+    }
+
+    Ui.PercentRow {
+      label: "Begin charging below"
+      description: "Charging resumes once the battery has dropped under this level."
+      visible: !searchHidden && charge !== null && charge.startSupported === true
+      value: charge !== null && charge.start !== null ? charge.start / 100 : 0
+      enabled: charge !== null && charge.supported === true
+      tooltip: charge !== null && charge.supported === true
+        ? "" : "This battery does not expose a charge limit"
+      onCommitted: function(next) { app.run(["power", "charge", "start", String(Math.round(next * 100))]) }
+    }
+  }
+
+  Ui.SettingGroup {
+    title: "Timeouts"
+
+    Ui.MinutesRow {
+      label: "Screensaver after"
+      seconds: idle.screensaver !== undefined ? Number(idle.screensaver) : 150
+      onCommitted: function(mins) { app.set("idle-screensaver", mins * 60) }
+      changed: app.isChanged("idle-screensaver")
+      onResetRequested: app.resetSetting("idle-screensaver")
+    }
+
+    Ui.MinutesRow {
+      label: "Lock after"
+      seconds: idle.lock !== undefined ? Number(idle.lock) : 300
+      onCommitted: function(mins) { app.set("idle-lock", mins * 60) }
+      changed: app.isChanged("idle-lock")
+      onResetRequested: app.resetSetting("idle-lock")
+    }
+
+    Ui.MinutesRow {
+      label: "Sleep after"
+      description: "Suspend the computer once it has been idle this long."
+      allowOff: true
+      seconds: idle.suspend !== undefined ? Number(idle.suspend) : 0
+      enabled: power.suspendAvailable === true
+      tooltip: power.suspendAvailable === true
+        ? "" : "Suspend is not available on this computer"
+      onCommitted: function(mins) { app.set("idle-suspend", mins * 60) }
+      changed: app.isChanged("idle-suspend")
+      onResetRequested: app.resetSetting("idle-suspend")
+    }
+
+    Ui.MinutesRow {
+      label: "Hibernate after"
+      description: "Hibernate the computer once it has been idle this long."
+      allowOff: true
+      seconds: idle.hibernate !== undefined ? Number(idle.hibernate) : 0
+      enabled: power.hibernateAvailable === true
+      tooltip: power.hibernateAvailable === true
+        ? "" : "Hibernate is not available on this computer"
+      onCommitted: function(mins) { app.set("idle-hibernate", mins * 60) }
+      changed: app.isChanged("idle-hibernate")
+      onResetRequested: app.resetSetting("idle-hibernate")
+    }
+  }
+
+  Ui.ChoiceRow {
+    label: "Lid close"
+    description: "What the laptop does when you close the lid."
+    visible: !searchHidden && power.hasLid === true
+    value: power.lidAction !== undefined ? String(power.lidAction) : "suspend"
+    options: {
+      var out = [
+        { value: "nothing", label: "Nothing" },
+        { value: "lock", label: "Lock" }
+      ]
+      if (power.suspendAvailable === true) out.push({ value: "suspend", label: "Suspend" })
+      if (power.hibernateAvailable === true) out.push({ value: "hibernate", label: "Hibernate" })
+      return out
+    }
+    onPicked: function(next) { app.set("lid-action", next) }
+    changed: app.isChanged("lid-action")
+    onResetRequested: app.resetSetting("lid-action")
   }
 
   // Under the battery rather than on the Processes page as well, because the

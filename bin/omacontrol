@@ -116,6 +116,8 @@ usage:
   omacontrol audio state | audio watch | default output|input <device> | volume output|input <percent>
                  | mute output|input on|off|toggle
   omacontrol power state | power watch | profile ac|battery <power-saver|balanced|performance>
+                 | power sleep | power hibernate | power lid closed
+                 | power charge end|start <percent>
   omacontrol bluetooth state | power on|off | scan | poll | pair|connect|disconnect|forget <address>
   omacontrol theme list | backgrounds | bg <path>
   omacontrol wifi list | rescan | poll | link | publicip | speedtest | connect <ssid> [password] | disconnect | forget <ssid>

@@ -123,6 +123,14 @@ Scope {
     }
   }
 
+  // ---------------- the always-on power half -------------------------------
+  //
+  // The sleep and hibernate timeouts and the lid action are enforced while
+  // the window is closed, so they live here rather than in the window.
+  PowerService {
+    pluginDir: root.sourceDir
+  }
+
   // ---------------- launcher entry -----------------------------------------
 
   // Where this plugin's own files are, from this file's URL rather than the

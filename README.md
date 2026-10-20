@@ -18,6 +18,9 @@ leave the bar if you want the space for others.
   or all at once.
 - **Keyboard first.** Arrows or `j`/`k` move, `h`/`l` change a value,
   `Alt`+arrows change page, `/` searches, `Esc` closes.
+- **Power and the lockscreen.** When the machine sleeps, hibernates or locks,
+  what closing the laptop's lid does, and how far the battery is allowed to
+  charge.
 
 <p align="center"><img src="docs/screenshots/search.png" alt="Searching for border: matching settings on the Windows and Configs pages, changed ones marked with a reset link" width="600"></p>
 
@@ -144,13 +147,15 @@ what it was given when you plug it back in.
 <a href="docs/screenshots/power.png"><img src="docs/screenshots/power.png" alt="Power page"></a><br>
 <b>Power</b><br>
 The battery's charge, health and charge cycles, and the power profile to run
-at on battery and plugged in.
+at on battery and plugged in. Plus the screensaver, lock, sleep and
+hibernate timeouts, what closing the laptop's lid does, and how far the
+battery is allowed to charge.
 </td>
 <td width="50%" valign="top">
-<a href="docs/screenshots/idle-and-lock.png"><img src="docs/screenshots/idle-and-lock.png" alt="Idle and Lock page"></a><br>
-<b>Idle & Lock</b><br>
-How long before the screensaver starts and the screen locks, and the
-animation shown at start-up and while unlocking.
+<a href="docs/screenshots/idle-and-lock.png"><img src="docs/screenshots/idle-and-lock.png" alt="Lockscreen page"></a><br>
+<b>Lockscreen</b><br>
+The animation shown at start-up and while unlocking, picked from the same
+previews the Theme page uses.
 </td>
 </tr>
 <tr>
@@ -355,6 +360,7 @@ applying the tmux option, and rolled back if it fails.
 | `nmcli`                      | Network                                               |
 | `bluetoothctl`               | Bluetooth                                             |
 | `upower`, `powerprofilesctl` | Power                                                 |
+| `pkexec` (polkit)            | Battery charge limit — its sysfs files are root-owned |
 | `timedatectl`                | Date & Time                                           |
 | `tmux`, `nvim`, `herdr`      | Their own pages under Configs                         |
 | `xkbcli`                     | Checking a keyboard layout compiles before writing it |
@@ -367,7 +373,9 @@ applying the tmux option, and rolled back if it fails.
 | `curl`                       | The news list on Overview                             |
 
 Only `jq` is required. A page whose tool is missing says so instead of failing.
-Nothing here needs root, and nothing is installed on your behalf.
+Nothing is installed on your behalf. Setting a battery charge limit asks for
+the admin password through polkit, because the battery's sysfs files belong to
+root; everything else needs no privileges.
 
 ## Remove
 

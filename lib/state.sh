@@ -109,7 +109,9 @@ state_slice() {
     bar) jq -cn --argjson cfg "$(read_shell_json)" "{ bar: $BAR_STATE_JQ }" ;;
     idle) jq -cn --argjson cfg "$(read_shell_json)" \
       '{ idle: { screensaver: (($cfg.idle.screensaver // 150) | tonumber? // 150),
-                 lock: (($cfg.idle.lock // 300) | tonumber? // 300) } }' ;;
+                 lock: (($cfg.idle.lock // 300) | tonumber? // 300),
+                 suspend: (($cfg.idle.suspend // 0) | tonumber? // 0),
+                 hibernate: (($cfg.idle.hibernate // 0) | tonumber? // 0) } }' ;;
 
     # Words rather than documents, so they are quoted as words.
     theme) jq -cn --arg v "$(state_theme)" '{ theme: $v }' ;;
@@ -331,7 +333,12 @@ state() {
       bar: '"$BAR_STATE_JQ"',
       idle: {
         screensaver: (($cfg.idle.screensaver // 150) | tonumber? // 150),
-        lock: (($cfg.idle.lock // 300) | tonumber? // 300)
+        lock: (($cfg.idle.lock // 300) | tonumber? // 300),
+        # The sleep and hibernate timeouts are enforced by the service this
+        # plugin ships rather than by the Omarchy idle service, which reads
+        # only the screensaver and lock timeouts; 0 is their off state.
+        suspend: (($cfg.idle.suspend // 0) | tonumber? // 0),
+        hibernate: (($cfg.idle.hibernate // 0) | tonumber? // 0)
       },
       hypr: $hypr,
       # The settings this window has written, so a page can say which of its
