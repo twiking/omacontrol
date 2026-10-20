@@ -393,15 +393,24 @@ Ui.SectionBody {
     return n
   }
 
-  // What the marketplace's answer for one plugin is, in a sentence. Four
-  // different things, and the difference between the last two is the whole
-  // point: nobody went and looked is not the same as looked and it is not
-  // there.
+  // What the marketplace's answer for one plugin is, in a sentence. The
+  // difference between the last two is the whole point: nobody went and
+  // looked is not the same as looked and it is not there. And a listing that
+  // was verified says so only of the copy that was reviewed — a newer
+  // commit, an edit made here, or a fork under the same id is something else.
   function standing(p) {
     if (p === null || p === undefined) return "—"
     if (p.verified === true)
       return p.verifiedAt !== "" ? "Verified " + shortDate(p.verifiedAt) : "Verified"
+    if (p.listed === true && p.reviewed === true) {
+      if (p.head !== p.reviewedCommit) return "Listed, this version not verified"
+      if (p.pristine === false) return "Listed, changed on this machine"
+      return "Listed, this copy not checked"
+    }
     if (p.listed === true) return "Listed, not verified"
+    if (p.contested === true) return "Listed, installed twice"
+    if (p.elsewhere === true)
+      return p.matchable === true ? "Listed from another repository" : "Listed, source unknown"
     if (p.looked === true) return "Not listed"
     return "Not checked yet"
   }
@@ -871,10 +880,47 @@ Ui.SectionBody {
       glyph: ""
       // The grid above already says "Not listed" under Marketplace, so the
       // notice says what that *means* — nobody has read this code — and why
-      // it is usually nothing to act on.
+      // it is usually nothing to act on. A copy whose id is listed from
+      // somewhere it did not come from is the case that matters: the review
+      // exists, and it is of other code.
       label: "Nobody has reviewed this one"
-      description: "It is not on plugins.omarchy.org, which is expected for one of "
-        + "your own or one installed straight from a git URL."
+      description: page.opened === null || page.opened.elsewhere !== true
+        ? "It is not on plugins.omarchy.org, which is expected for one of "
+          + "your own or one installed straight from a git URL."
+        : page.opened.contested === true
+          ? "More than one copy here claims this id and only one of them runs, so "
+            + "neither can be matched to the plugins.omarchy.org listing."
+        : page.opened.matchable === true
+          ? "plugins.omarchy.org lists this id from a different repository than the "
+            + "one this copy was cloned from"
+            + (page.opened.elsewhereReviewed === true
+               ? ", so its review is of that code, not this." : ".")
+        : page.opened.origin === ""
+          ? "This copy does not say where it was cloned from, so it cannot be "
+            + "matched to the plugins.omarchy.org listing under the same id."
+          : "The plugins.omarchy.org listing under this id does not name its "
+            + "repository, so this copy cannot be matched to it."
+    }
+
+    // Listed and verified, but not this copy. The grid says that much; what it
+    // cannot say is which commit was reviewed and which one is here.
+    Ui.NoticeRow {
+      visible: !searchHidden && page.opened !== null && page.opened.listed === true
+        && page.opened.reviewed === true && page.opened.verified !== true
+      label: "This copy is not the one that was reviewed"
+      description: {
+        if (page.opened === null) return ""
+        var reviewed = String(page.opened.reviewedCommit).slice(0, 7)
+        if (page.opened.head !== page.opened.reviewedCommit)
+          return "plugins.omarchy.org verified commit " + reviewed + ", and this copy is at "
+            + (page.opened.head !== "" ? String(page.opened.head).slice(0, 7) : "no commit")
+            + "."
+        if (page.opened.pristine === false)
+          return "Files here differ from commit " + reviewed
+            + ", the one plugins.omarchy.org verified."
+        return "Its files could not be read in time to compare them with commit "
+          + reviewed + ", the one plugins.omarchy.org verified."
+      }
     }
 
     Ui.SwitchRow {

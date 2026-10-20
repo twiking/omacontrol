@@ -376,19 +376,75 @@ plugin_update_run() {
 
 # --------------------------------------------- what the machine itself knows
 #
+# What a marketplace verification can be held against: where this copy was
+# cloned from, the commit it is at, and whether its files are still that
+# commit's. Sets `origin`, `head` and `pristine` in the caller; `pristine` is
+# null when git could not answer, which is not the same as a copy changed.
+#
+# Only a directory with its own `.git` is asked. Without that check git walks
+# upwards, and a plugin copied into a dotfiles repository would answer with
+# the dotfiles' remote and commit.
+#
+# Untracked files are judged by the plugin's own `.gitignore` alone, not by
+# this machine's global excludes or `info/exclude`: a plugin that builds a
+# helper on install leaves output its repository already declares, and only
+# a file it does not account for makes the copy different from the commit.
+# That leaves the `.gitignore` files themselves, which are read whether
+# tracked or not — so an untracked one, which could hide itself and anything
+# beside it, is a change on its own.
+#
+# fsmonitor is off because reading the index otherwise starts a daemon in
+# every plugin for anyone who has it on globally, and replace objects and
+# external diff drivers are off so the commit compared is the one named.
+plugin_git() {
+  capture git -c core.fsmonitor=false --no-replace-objects -C "$path" "$@"
+}
+
+plugin_checkout() {
+  local path=$1 rc listed
+  origin='' head='' pristine=null
+  [[ -e $path/.git ]] || { pristine=false; return 0; }
+  # `get-url` rather than the raw config, so an `insteadOf` alias arrives as
+  # the address it stands for.
+  origin=$(plugin_git remote get-url origin)
+  head=$(plugin_git rev-parse --verify -q HEAD)
+  [[ -n $head ]] || return 0
+
+  plugin_git diff --quiet --no-ext-diff --no-textconv HEAD -- >/dev/null
+  rc=$?
+  (( rc == 1 )) && { pristine=false; return 0; }
+  (( rc == 0 )) || return 0
+
+  # Files git has been told to stop looking at: assume-unchanged (lower case)
+  # and skip-worktree (S) are both edits a diff will not show.
+  listed=$(plugin_git ls-files -v) || return 0
+  [[ $'\n'$listed =~ $'\n'[a-zS]' ' ]] && { pristine=false; return 0; }
+
+  listed=$(plugin_git ls-files --others -- ':(glob)**/.gitignore') || return 0
+  [[ -n $listed ]] && { pristine=false; return 0; }
+  listed=$(plugin_git ls-files --others --exclude-per-directory=.gitignore) || return 0
+  [[ -n $listed ]] && pristine=false || pristine=true
+  return 0
+}
+
 # What each installed plugin declares about itself, and what it occupies.
 #
 # `omarchy plugin list` answers none of this: it knows an id, a name, the kinds
 # and whether the plugin is on. The version, the author and the licence are in
 # the manifest beside each plugin — the same file Omarchy reads to build that
 # list, and the one place a plugin's version is written.
+#
+# Keyed by the manifest's id, not the directory's name, because that is how
+# the shell keys them. Two directories claiming one id are both loaded under
+# it and only one of them runs, so neither can be said to be the copy the
+# page is describing: the entry is marked `contested` and earns no listing.
 plugin_local() {
   local dir="$HOME_DIR/.config/omarchy/plugins"
   [[ -d $dir ]] || { echo '{}'; return; }
 
-  local ids
-  ids=$(capture find -L "$dir" -mindepth 1 -maxdepth 1 -type d -not -name '.*' -printf '%f\n' | sort)
-  [[ -n $ids ]] || { echo '{}'; return; }
+  local names
+  names=$(capture find -L "$dir" -mindepth 1 -maxdepth 1 -type d -not -name '.*' -printf '%f\n' | sort)
+  [[ -n $names ]] || { echo '{}'; return; }
 
   # The sizes are held to the read timeout and not the walk budget. This runs
   # on the page's poll, and a plugin is a few hundred kilobytes of QML with its
@@ -398,25 +454,36 @@ plugin_local() {
   # `du -L` and not `du -x`: a plugin can be a symlink to a checkout elsewhere,
   # which is how anyone developing one has it, and the question is what the
   # plugin is rather than what this directory entry costs.
-  local rows id bytes history manifest
+  local rows name bytes history manifest origin head pristine
   rows=$(
-    while IFS= read -r id; do
-      [[ -n $id ]] || continue
-      bytes=$(capture du -sbL -- "$dir/$id" | cut -f1 | tr -dc '0-9')
-      history=$(capture du -sbL -- "$dir/$id/.git" | cut -f1 | tr -dc '0-9')
+    while IFS= read -r name; do
+      [[ -n $name ]] || continue
+      bytes=$(capture du -sbL -- "$dir/$name" | cut -f1 | tr -dc '0-9')
+      history=$(capture du -sbL -- "$dir/$name/.git" | cut -f1 | tr -dc '0-9')
       # Empty when the manifest is missing or is not JSON, which jq says by
       # printing nothing rather than by its exit status.
-      manifest=$(capture jq -c '{ version: (.version // ""), author: (.author // ""),
-                                  license: (.license // ""), description: (.description // "") }' \
-                   "$dir/$id/manifest.json")
+      manifest=$(capture jq -c '{ id: (.id // ""), version: (.version // ""),
+                                  author: (.author // ""), license: (.license // ""),
+                                  description: (.description // "") }' \
+                   "$dir/$name/manifest.json")
       [[ -n $manifest ]] || manifest='{}'
-      jq -cn --arg id "$id" --argjson bytes "${bytes:-0}" --argjson history "${history:-0}" \
+      plugin_checkout "$dir/$name"
+      jq -cn --arg name "$name" --argjson bytes "${bytes:-0}" --argjson history "${history:-0}" \
         --argjson manifest "$manifest" \
-        '$manifest + { id: $id, bytes: $bytes, gitBytes: $history }' 2>/dev/null
-    done <<<"$ids"
+        --arg origin "$origin" --arg head "$head" --argjson pristine "$pristine" \
+        '$manifest + { id: (if ($manifest.id // "") != "" then $manifest.id else $name end),
+                       bytes: $bytes, gitBytes: $history,
+                       origin: $origin, head: $head, pristine: $pristine }' 2>/dev/null
+    done <<<"$names"
   )
 
-  emit_json "$(jq -c -s 'map({ key: .id, value: . }) | from_entries' <<<"$rows" 2>/dev/null)" '{}'
+  emit_json "$(jq -c -s '
+    group_by(.id)
+    | map({ key: .[0].id,
+            value: (if length == 1 then .[0] + { contested: false }
+                    else .[0] + { contested: true, origin: "", head: "", pristine: false,
+                                  bytes: (map(.bytes) | add) } end) })
+    | from_entries' <<<"$rows" 2>/dev/null)" '{}'
 }
 
 # ------------------------------------------------ what the marketplace says
@@ -436,12 +503,14 @@ plugin_local() {
 # through jq and reduced to those twenty before any of it is kept, so what
 # lands in the cache is a few hundred bytes a plugin.
 #
-# **The match is on the plugin's id and nothing else.** The id is the
-# manifest's, the directory is named after it, and the catalogue read that
-# same manifest — so the join is exact by construction, and a fork that
-# changed its id is genuinely not the listed plugin. Matching a fork on its
-# remote would hand it someone else's verification, which is the one mistake
-# a badge like this must not make.
+# **The id finds the listing; the copy has to earn it.** A listing is a
+# repository, and a verification is one commit of it. A fork that kept the id,
+# or a copy edited where it sits, shares the id and none of what was
+# reviewed. So `plugins_report` gives a copy its listing only when it was
+# cloned from the listed repository, and the badge only when it is at the
+# verified commit with its files unchanged (`plugin_checkout`). Handing
+# someone else's verification to code nobody looked at is the one mistake a
+# badge like this must not make.
 PLUGIN_DIRECTORY_CACHE="${OMACONTROL_PLUGIN_DIRECTORY:-${XDG_CACHE_HOME:-$HOME_DIR/.cache}/omarchy/omacontrol/plugin-directory.json}"
 PLUGIN_CATALOG_URL="${OMACONTROL_PLUGIN_CATALOG_URL:-https://plugins.omarchy.org/catalog.json}"
 PLUGIN_STATS_URL="${OMACONTROL_PLUGIN_STATS_URL:-https://api.omarchyplugins.com/v1/stats}"
@@ -501,6 +570,7 @@ plugin_directory_refresh() {
                          stars: (.stars // 0),
                          repo: (.repo // ""),
                          verified: (.verificationStatus == "verified"),
+                         commit: (.verificationCommit // ""),
                          verifiedAt: (.verificationCheckedAt // "") } } ]
         | from_entries' 2>/dev/null)
 
@@ -557,9 +627,14 @@ plugin_directory_fetch() {
   # `.` is `$known`, so the array is asked to find *itself*, every answer is
   # null, and nothing is ever missing. Bound first, it asks the question it
   # looks like it is asking.
+  #
+  # An entry without the verified commit was cached before the badge needed
+  # one, and it would take every badge away for up to a day; it counts as
+  # missing too.
   missing=$(jq -r --argjson ids "$ids" \
     '(.ids // []) as $known
-     | [ $ids[] | . as $id | select(($known | index($id)) == null) ] | length' \
+     | ([ $ids[] | . as $id | select(($known | index($id)) == null) ] | length)
+       + ([ (.plugins // {})[] | select(has("commit") | not) ] | length)' \
     <<<"$cached" 2>/dev/null)
 
   if (( $(date +%s) - ${at:-0} > PLUGIN_DIRECTORY_AUTO_AGE )) || (( ${missing:-0} > 0 )); then
@@ -602,14 +677,37 @@ plugins_report() {
   # Off the cache, never fetched here: this runs on the page's poll.
   directory=$(plugin_directory_cached)
 
+  # A remote spelled as https, as ssh, with or without `.git`, is still one
+  # repository; GitHub does not care about case in either half of the name.
   emit_json "$(jq -cn --argjson list "${list:-[]}" --argjson mine "${mine:-{\}}" \
     --argjson directory "${directory:-{\}}" '
+      def repository:
+        ascii_downcase
+        | if test("^[a-z][a-z0-9+.-]*://")
+          then sub("^[a-z][a-z0-9+.-]*://(?:[^@/]*@)?(?<host>[^/:]+)(?::[0-9]*)?"; "\(.host)")
+          else sub("^(?:[^@/]*@)?(?<host>[^/:]+):"; "\(.host)/") end
+        | sub("/+$"; "") | sub("\\.git$"; "");
       ($directory.plugins // {}) as $listing
       | ($directory.ids // []) as $covered
       | [ $list[]
           | . as $p
           | ($mine[$p.id] // {}) as $own
-          | ($listing[$p.id] // null) as $entry
+          | ($listing[$p.id] // null) as $candidate
+          # Both sides have to name a repository before they can be compared.
+          | (($own.origin // "") != "" and ($candidate.repo // "") != "") as $matchable
+          # Omarchy ships its own plugins and reserves their namespace, so
+          # for those the id is the whole answer. Anyone else has to have
+          # been cloned from the repository the listing names.
+          | ($candidate != null
+             and ($p.firstParty == true
+                  or ($matchable and ($own.contested // false | not)
+                      and ($own.origin | repository) == ($candidate.repo | repository))))
+            as $same
+          | (if $same then $candidate else null end) as $entry
+          # A verification that does not say which commit it covers cannot be
+          # held against any copy.
+          | (($entry.verified // false) and ($entry.commit // "") != "") as $reviewed
+          | (if $own | has("pristine") then $own.pristine else null end) as $pristine
           | $p + { version: ($own.version // ""),
                    # The manifest first and the listing second: the listing is
                    # what was submitted, the manifest is what is installed.
@@ -627,7 +725,25 @@ plugins_report() {
                    # looked up, and calling it unlisted would be inventing an
                    # answer nobody went and got.
                    looked: (($covered | index($p.id)) != null),
-                   verified: ($entry.verified // false),
+                   # The id is listed, but from a repository this copy did not
+                   # come from, or one of the two cannot be named, or two
+                   # copies here claim it.
+                   elsewhere: ($candidate != null and ($same | not)),
+                   elsewhereReviewed: ($candidate != null and ($same | not)
+                                       and ($candidate.verified // false)),
+                   contested: ($own.contested // false),
+                   matchable: $matchable,
+                   origin: ($own.origin // ""),
+                   # What was reviewed, and whether this copy is it. A built-in
+                   # has no checkout to compare: it is the package Omarchy
+                   # installed, so the listing speaks for it.
+                   reviewed: $reviewed,
+                   reviewedCommit: (if $reviewed then $entry.commit else "" end),
+                   head: ($own.head // ""),
+                   pristine: $pristine,
+                   verified: ($reviewed
+                              and ($p.firstParty == true
+                                   or (($own.head // "") == $entry.commit and $pristine == true))),
                    verifiedAt: ($entry.verifiedAt // ""),
                    status: ($entry.status // ""),
                    category: ($entry.category // ""),
