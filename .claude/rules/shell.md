@@ -21,6 +21,30 @@ only when run through `bin/omacontrol`, which is the one place `pipefail` is
 set, so it passes every test run by hand. Use `emit_json "$(...)" '[]'` from
 `core.sh`: the value decides, not the exit status.
 
+**Nothing private goes on a command line.** `/proc/<pid>/cmdline` is readable
+by every user on the machine, and a marketplace review of the submission found
+the whole of `shell.json` — any widget's tokens and keys with it — passed as
+`jq --argjson cfg` on every state read, and a disabled widget's settings the
+same way through `bar disable`/`enable`. So `jq` in `lib/` is a function in
+`core.sh` that moves every `--arg`/`--argjson` into that one process's
+environment (owner-only in /proc) and binds it back at the head of the filter.
+Keep calling `jq` by name: `command jq`, `/usr/bin/jq`, or `capture jq … --arg`
+(which execs through `timeout` and skips the function) puts the value back on
+argv. Anything else that is secret travels on stdin, as the Wi-Fi passphrase
+does.
+
+The same review's second pass found git doing it on its own: `git fetch` over
+https starts `git-remote-https` with the whole remote URL as an argument, so a
+plugin cloned as `https://user:TOKEN@…` showed the token for as long as the
+update check's fetch ran. A remote with a sign-in in its address is not
+fetched (-3, "not checked"), and the Add form refuses one before it is sent.
+
+`.claude/skills/omacontrol-testing/scripts/argv-leak.sh` is the check: a
+canary in a sandboxed widget's settings and in two plugins' remotes, an exec
+shim on every `/usr/bin` name that logs any argv carrying it, and a `/proc`
+poll for what git starts outside PATH. Run it after touching anything that
+moves a document, a remote or a typed value between programs.
+
 Two `jq` habits worth remembering:
 
 - Inside `($list | index(.x))` the `.` is now `$list` — bind the value first

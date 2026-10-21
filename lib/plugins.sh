@@ -67,8 +67,9 @@ plugins_state() {
 # Whether each installed plugin has commits waiting upstream. One line per
 # plugin, printed the moment that plugin's own fetch settles rather than at
 # the end, so the window can retire one spinner at a time. The count is the
-# payload; -1 means the plugin is not a git checkout and -2 that the fetch
-# failed (no network, private remote, gone).
+# payload; -1 means the plugin is not a git checkout, -2 that the fetch
+# failed (no network, private remote, gone), and -3 that it was not tried
+# because the remote's address carries a sign-in.
 plugin_updates() {
   local dir="$HOME_DIR/.config/omarchy/plugins"
   [[ -d $dir ]] || return 0
@@ -97,6 +98,12 @@ plugin_updates() {
       repo="$PLUGINS_DIR/$id"
       if [[ ! -d $repo/.git ]]; then
         printf "%s\t-1\n" "$id"
+      # An address with a sign-in in it is not fetched: git hands the whole
+      # URL to its https helper as an argument, where every user on the
+      # machine can read it for as long as the fetch takes. The address is
+      # read locally; nothing has gone over the network to find this out.
+      elif [[ $(git -C "$repo" remote get-url origin 2>/dev/null) =~ ^[Hh][Tt][Tt][Pp][Ss]?://[^/]*@ ]]; then
+        printf "%s\t-3\n" "$id"
       elif GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -oBatchMode=yes}" \
            timeout "${FETCH_TIMEOUT:-30}" git -C "$repo" fetch -q origin HEAD 2>/dev/null; then
         # The bounds are spelled out rather than shared: this runs in a bash
@@ -184,6 +191,13 @@ self_update_state() {
     { id: $id, version: $version, behind: ((.results[$id] // 0)), checkedAt: (.checkedAt // 0) }'
 }
 
+# An http(s) address with a user or token before the host. An ssh user name
+# (`git@github.com`) is not a secret and is not counted.
+url_signed_in() { [[ ${1,,} =~ ^https?://[^/]*@ ]]; }
+plugin_remote_signed_in() {
+  url_signed_in "$(capture git -C "$1" remote get-url origin)"
+}
+
 # One fetch, ours only, folded into the same cache the Plugins page reads.
 # The window runs it in the background on open: it is a network round trip,
 # and nothing should wait on it.
@@ -194,7 +208,10 @@ self_check() {
   repo="$HOME_DIR/.config/omarchy/plugins/$id"
   [[ -d $repo/.git ]] || { self_update_state; return 0; }
 
-  if GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -oBatchMode=yes}" \
+  # Not fetched with a sign-in in the address, for the reason the sweep gives.
+  if plugin_remote_signed_in "$repo"; then
+    behind=-3
+  elif GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -oBatchMode=yes}" \
      git -C "$repo" fetch -q origin HEAD 2>/dev/null; then
     behind=$(capture git -C "$repo" rev-list --count HEAD..FETCH_HEAD || echo 0)
   else
@@ -279,6 +296,9 @@ plugin_update_start() {
 plugin_add_start() {
   local url=$1 enable=${2:-leave} reopen=0
   [[ -n $url ]] || die "no git URL given"
+  # Git would pass it to its https helper on the command line, and this
+  # window to two processes of its own, all readable by every user here.
+  url_signed_in "$url" && die "leave the sign-in out of the address"
 
   jq -c --arg url "$url" --argjson at "$(date +%s)" \
     '.adding = { url: $url, at: $at } | .lastAdd = null' \

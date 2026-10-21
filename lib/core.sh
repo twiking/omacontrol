@@ -16,6 +16,84 @@ MANAGED_MARKER="omacontrol:managed"
 
 die() { echo "omacontrol: $*" >&2; exit 1; }
 
+# A program's command line is readable by every user on the machine, through
+# /proc/<pid>/cmdline, for as long as it runs. jq takes its variables there, and
+# what this window hands it is often a document read from a private file:
+# shell.json, with whatever tokens and keys a widget keeps in its settings; the
+# store, which holds those settings while the widget is switched off; a
+# plugin's remote, which can carry credentials. A marketplace review found the
+# whole of shell.json going past that way on every state read.
+#
+# So no value reaches jq through argv. Each `--arg` and `--argjson` travels in
+# the environment of that one jq process instead, which /proc shows to its own
+# user alone, and is bound back to the same name at the head of the filter —
+# `$ARGS.named` included. Callers go on writing `--arg name value`: a rule each
+# of three hundred call sites has to remember is a rule the next one forgets.
+#
+# The options go first, then `--`, the program and its inputs, which is how
+# jq reads them wherever they were written. An option short of its value is
+# refused here rather than handed on, since handing on the original arguments
+# would put every value before it back on the command line. So is a program
+# that opens with `import` or `include`, which has to come before anything
+# this could put in front of it, and an `-L` in a cluster; nothing here writes
+# either.
+#
+# `env.X` rather than `$ENV.X`, because a caller may name a variable ENV. And
+# `--argjson` that is not JSON fails when the filter runs, with status 5 rather
+# than 2, and without echoing the value: checking it up front would cost a
+# second jq for every one of them, and every caller only asks whether jq
+# failed.
+jq() {
+  local -a options=() inputs=()
+  local program='' have=false from_file=false bound='' named='' n=0 var no_more=false
+  while (( $# )); do
+    if ! $no_more && [[ $1 == -?* ]]; then
+      case $1 in
+        --arg|--argjson|--slurpfile|--rawfile)
+          (( $# >= 3 )) || { echo "jq: $1 takes two parameters (e.g. $1 varname value)" >&2; return 2; }
+          if [[ $1 == --slurpfile || $1 == --rawfile ]]; then
+            options+=("$1" "$2" "$3")
+          elif [[ $2 =~ ^[A-Za-z_][A-Za-z0-9_]*$ && $2 != __loc__ && $2 != ENV ]]; then
+            var=OMACONTROL_JQ_VAR_$((n++))
+            local -x "$var=$3"
+            if [[ $1 == --arg ]]; then bound+="env.$var as \$$2 | "
+            else bound+="(env.$var | try fromjson catch error(\"--argjson $2 is not JSON\")) as \$$2 | "; fi
+            named+="${named:+, }$2: \$$2"
+          fi
+          # A name no filter could refer to, or one jq keeps for itself, is
+          # dropped rather than carried.
+          shift 3; continue ;;
+        --indent|-L|--library-path)
+          (( $# >= 2 )) || { echo "jq: error: $1 takes a parameter" >&2; return 2; }
+          options+=("$1" "$2"); shift 2; continue ;;
+        # A flag, as jq has it: the program is then read from the file the
+        # first positional names, wherever the flag was written. Taken out of
+        # a cluster too, so jq does not go on to read the program text as a
+        # file name.
+        -f|--from-file) from_file=true; shift; continue ;;
+        --) no_more=true; shift; continue ;;
+        -[!-]*L*)
+          echo "jq: error: give -L on its own, not in $1" >&2; return 2 ;;
+        -[!-]*f*)
+          from_file=true
+          [[ ${1//f/} != - ]] && options+=("${1//f/}")
+          shift; continue ;;
+        *) options+=("$1"); shift; continue ;;
+      esac
+    fi
+    if ! $have; then program=$1 have=true; else inputs+=("$1"); fi
+    shift
+  done
+  $have || { command jq "${options[@]}"; return; }
+  if $from_file; then program=$(<"$program") || return 2; fi
+  if [[ -n $bound && -n ${program//[[:space:]]/} ]]; then
+    [[ $program =~ ^[[:space:]]*(import|include)[[:space:]] ]] \
+      && { echo "jq: error: a program with import or include cannot take --arg here" >&2; return 2; }
+    program="$bound(\$ARGS | .named += { $named }) as \$ARGS | $program"
+  fi
+  command jq "${options[@]}" -- "$program" "${inputs[@]}"
+}
+
 # The window is a long-lived shell process that retains and parses whatever a
 # reader prints, so a producer that hangs or never stops is its problem too.
 # Every read of the compositor or the system goes through here: bounded in

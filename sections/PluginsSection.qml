@@ -27,7 +27,7 @@ Ui.SectionBody {
 
   // What the update sweep has learned so far, keyed by plugin id: still
   // checking, and how many commits are waiting (-1 not a git checkout,
-  // -2 the fetch failed). Both are replaced wholesale rather than mutated,
+  // -2 the fetch failed, -3 not fetched because the address holds a sign-in). Both are replaced wholesale rather than mutated,
   // since that is what re-evaluates the rows' bindings.
   property var checking: ({})
   // Seeded from the last sweep's cache, so leaving the page and coming back
@@ -494,6 +494,11 @@ Ui.SectionBody {
         placeholder: "https://github.com/acme/omarchy-weather"
         error: text.trim() === "" ? "Give it a git URL."
           : /\s/.test(text.trim()) ? "A git URL cannot contain spaces."
+          // Refused before it is sent anywhere: the address would travel as
+          // an argument, to the window's own commands and to git's download,
+          // where everyone on this computer can read it.
+          : /^https?:\/\/[^\/]*@/i.test(text.trim())
+            ? "Leave the password out of the address. While it downloads, anyone on this computer could read it."
           : ""
         onAccepted: addButton.clicked()
       }
@@ -683,6 +688,7 @@ Ui.SectionBody {
             { text: page.checking[id] === true ? "checking…"
                 : n === -1 ? "not from git"
                 : n === -2 ? "unreachable"
+                : n === -3 ? "not checked"
                 : ahead !== undefined ? String(ahead)
                 : n === 0 ? String(p.version) : "",
               strong: n > 0 },
@@ -828,6 +834,9 @@ Ui.SectionBody {
     var n = behind[id] === undefined ? 0 : behind[id]
     if (n === -1) return "Not a git checkout"
     if (n === -2) return "Could not reach its remote"
+    // Fetching would show the password in its address to everyone on this
+    // computer while it ran, so nothing was asked.
+    if (n === -3) return "Not checked: its address holds a password"
     if (!checked) return "Not checked yet"
     var ahead = upstream[id]
     if (n > 0)
