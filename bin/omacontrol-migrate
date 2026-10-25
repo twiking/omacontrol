@@ -320,11 +320,13 @@ chmod +x "$ROLLBACK/undo.sh"
 
 # ---------------------------------------------------------------- carry it out
 #
-# Hyprland reloads on its own whenever a file it loads changes, so every step
-# below leaves hyprland.lua naming files that exist. The generated file is put
-# in place under its new name first; then the line that loads it is changed;
-# only then does the old file go. A reload landing anywhere in between loads
-# the settings once or twice, never not at all.
+# Every step below leaves hyprland.lua naming files that exist. The generated
+# file is put in place under its new name first; then the line that loads it
+# is changed; only then does the old file go. A reload landing anywhere in
+# between loads the settings once or twice, never not at all. The rewrite is a
+# rename, and Hyprland's watch follows the inode, so that reload does not
+# always happen on its own — the one below is explicit, and it runs while the
+# old file is still on disk.
 
 # Copied rather than moved, with the header rewritten on the way: the old
 # file stays until nothing names it.
@@ -415,6 +417,11 @@ instead, run $ROLLBACK/undo.sh"
 Remove that line by hand, then delete $HYPR_DIR/omasettings.conf. To put everything back
 instead, run $ROLLBACK/undo.sh"
   fi
+  # Before the old file goes. A compositor still running the previous
+  # hyprland.lua — the rename above never woke its watch — reports
+  # "module hypr.omasettings not found" once that file is missing, and the
+  # error bar stays up. config-only leaves the monitors where they are.
+  hyprctl reload config-only >/dev/null 2>&1 || true
   rm -f "$HYPR_DIR/omasettings.lua" "$HYPR_DIR/omasettings.conf"
 fi
 
@@ -503,10 +510,16 @@ rename_in_shell_json() {
   tmp=$(mktemp "$SHELL_JSON.omacontrol-migrate.XXXXXX") || die "could not write beside $SHELL_JSON"
   # OmaControl may already be enabled — installed with --enable before this
   # ran — and then its gear would be in the bar twice. The old one's slot is
-  # where the reader put it, so that one stays.
+  # where the reader put it, so that one stays. The two are often in different
+  # sections, and a check that only looks inside one section leaves both: the
+  # shell moves the first id it finds, and the other gear stays where it is.
   jq --arg old "$OLD_ID" --arg new "$NEW_ID" \
-    'walk(if type == "array" and any(.[]; type == "object" and .id == $old)
-          then map(select(type != "object" or .id != $new)) else . end)
+    '([.. | objects | select(.id == $old)] | length > 0) as $have_old
+     | if $have_old then
+         walk(if type == "array"
+              then map(select(type != "object" or .id != $new))
+              else . end)
+       else . end
      | walk(if type == "object" and .id == $old then .id = $new else . end)' \
     "$SHELL_JSON" >"$tmp" || { rm -f "$tmp"; die "could not rewrite $SHELL_JSON"; }
   # A shell.json that does not parse is a bar that does not draw.
