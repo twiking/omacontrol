@@ -14,6 +14,7 @@ import qs.Ui
 // button and nothing else.
 BarWidget {
   id: root
+  Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
   moduleName: "io.github.twiking.omacontrol"
 
   // Either name of Omarchy's theme singleton, as in Palette.qml.
@@ -46,9 +47,9 @@ BarWidget {
   readonly property var switches: service && service.switches ? service.switches : ({})
   readonly property var switchedOn: {
     var on = []
-    if (switches.nightlight === true) on.push("Night light")
-    if (switches.dnd === true) on.push("Do not disturb")
-    if (switches.awake === true) on.push("Stay awake")
+    if (switches.nightlight === true) on.push(strings.t("overview.toggle.nightlight", "Night light"))
+    if (switches.dnd === true) on.push(strings.t("overview.toggle.dnd", "Do not disturb"))
+    if (switches.awake === true) on.push(strings.t("overview.toggle.awake", "Stay awake"))
     return on
   }
 
@@ -111,12 +112,15 @@ BarWidget {
     text: "\uf013"
     tooltipText: {
       var parts = []
-      if (root.offline) parts.push("No network")
-      if (root.batteryLow) parts.push("Battery at " + root.batteryLevel + " %")
+      if (root.offline) parts.push(strings.t("panel.tooltip.offline", "No network"))
+      if (root.batteryLow) parts.push(strings.t("panel.tooltip.battery", "Battery at %1 %").arg(root.batteryLevel))
       for (var i = 0; i < root.lowDevices.length; i++)
-        parts.push(root.lowDevices[i].name + " at " + root.lowDevices[i].percent + " %")
-      if (root.switchedOn.length > 0) parts.push(root.switchedOn.join(", ") + " on")
-      return parts.length > 0 ? "OmaControl — " + parts.join(" · ") : "OmaControl"
+        parts.push(strings.t("panel.tooltip.device", "%1 at %2 %")
+                     .arg(root.lowDevices[i].name).arg(root.lowDevices[i].percent))
+      if (root.switchedOn.length > 0)
+        parts.push(strings.t("panel.tooltip.on", "%1 on").arg(root.switchedOn.join(", ")))
+      return parts.length > 0 ? strings.t("panel.tooltip.prefix", "OmaControl — ") + parts.join(" · ")
+                              : strings.t("panel.tooltip.appName", "OmaControl")
     }
     active: root.opened
     onPressed: function(buttonCode) {

@@ -6,6 +6,8 @@
 # lib/, one module per thing being configured:
 #
 #   core.sh          paths, file writing, first-touch backups
+#   i18n.sh          the language of every sentence this backend prints
+#   language.sh      the session language Omarchy runs in
 #   store.sh         OmaControl' own store of what it has set
 #   hypr.sh          Hyprland options, live and in a generated config
 #   devices.sh       per-device input settings (Hyprland's hl.device)
@@ -45,7 +47,7 @@ OMACONTROL_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
 # itself: it is started from the window's own copy, which is not on any PATH.
 OMACONTROL_BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
-for module in core store hypr devices monitors workspaces shell_config compose plugins menu herdr tmux neovim bindings themes wifi bluetooth power audio disk processes packages security hosts apps usage news about branding overview migrate setters state; do
+for module in core i18n language store hypr devices monitors workspaces shell_config compose plugins menu herdr tmux neovim bindings themes wifi bluetooth power audio disk processes packages security hosts apps usage news about branding overview migrate setters state; do
   # shellcheck source=/dev/null
   source "$OMACONTROL_LIB/$module.sh"
 done
@@ -55,6 +57,9 @@ unset module
 # long as the bar does, so the last word on how much of it can arrive belongs
 # here rather than to any one producer.
 main() {
+  # Once, before anything prints: the window's QML resolves its language the
+  # same way, so the two cannot disagree about what language this is in.
+  i18n_load
 case ${1:-state} in
   state) shift; state "$@" ;;
   set) shift; set_key "$@" ;;
@@ -71,6 +76,7 @@ case ${1:-state} in
   devices) shift; devices_cmd "$@" ;;
   display) shift; monitor_cmd "$@" ;;
   theme) shift; themes_cmd "$@" ;;
+  language) shift; language_cmd "$@" ;;
   wifi) shift; wifi_cmd "$@" ;;
   bluetooth) shift; bluetooth_cmd "$@" ;;
   power) shift; power_cmd "$@" ;;
@@ -118,6 +124,7 @@ usage:
   omacontrol power state | power watch | profile ac|battery <power-saver|balanced|performance>
   omacontrol bluetooth state | power on|off | scan | poll | pair|connect|disconnect|forget <address>
   omacontrol theme list | backgrounds | bg <path>
+  omacontrol language set <language-code>   (Omarchy's session language; en, fr, da, ...)
   omacontrol wifi list | rescan | poll | link | publicip | speedtest | connect <ssid> [password] | disconnect | forget <ssid>
                  | radio on|off | band auto|2.4|5|6
   omacontrol disk poll | breakdown | mount|unmount <device> | trim | snapshot | open <path>

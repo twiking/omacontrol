@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Commons
 import "../ui" as Ui
 
 // Injected by the window when the page is loaded: the state every
@@ -9,6 +10,7 @@ import "../ui" as Ui
 // `omarchy bar set` reaches them too.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property string widgetId: "io.github.twiking.omacontrol"
@@ -29,12 +31,13 @@ Ui.SectionBody {
   readonly property var gear: app.barState.gear !== undefined ? app.barState.gear : ({})
 
   Ui.SettingGroup {
-    title: "Bar button"
-    note: page.inBar ? "" : "Add OmaControl to the bar to use these."
+    title: strings.t("omacontrolsection.title.1", "Bar button")
+    note: page.inBar ? ""
+      : strings.t("omacontrolsection.addToBar", "Add OmaControl to the bar to use these.")
 
     Ui.SwitchRow {
-      label: "Show active-switch count"
-      description: "Counts Night light, Do not disturb and Stay awake on the gear."
+      label: strings.t("omacontrolsection.label.1", "Show active-switch count")
+      description: strings.t("omacontrolsection.description.1", "Counts Night light, Do not disturb and Stay awake on the gear.")
       enabled: page.inBar
       checked: page.gear.activeSwitchCount !== false
       onRequested: function(next) { page.app.set("bar-active-switch-count", next ? "true" : "false") }
@@ -43,8 +46,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Show network warning"
-      description: "Marks the gear when there is no network at all. A click then opens Network."
+      label: strings.t("omacontrolsection.label.2", "Show network warning")
+      description: strings.t("omacontrolsection.description.2", "Marks the gear when there is no network at all. A click then opens Network.")
       enabled: page.inBar
       checked: page.gear.networkWarning !== false
       onRequested: function(next) { page.app.set("bar-network-warning", next ? "true" : "false") }
@@ -53,8 +56,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Show battery warnings"
-      description: "Marks the gear when the laptop or a Bluetooth device is at 10 % or under. A click then opens Power or Bluetooth."
+      label: strings.t("omacontrolsection.label.3", "Show battery warnings")
+      description: strings.t("omacontrolsection.description.3", "Marks the gear when the laptop or a Bluetooth device is at 10 % or under. A click then opens Power or Bluetooth.")
       enabled: page.inBar
       checked: page.gear.batteryWarnings !== false
       onRequested: function(next) { page.app.set("bar-battery-warnings", next ? "true" : "false") }

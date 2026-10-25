@@ -20,6 +20,7 @@ import "../ui" as Ui
 // state document. `plugins` stays there for the Bar page's widget ids.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var report: app.pluginsReport !== undefined
@@ -248,7 +249,7 @@ Ui.SectionBody {
   // With the tick, the way the row it was opened from carries it: a reader
   // who came here from a verified row should not have to wonder whether the
   // page is about the same plugin.
-  readonly property string headerTitle: creating ? "Add a plugin"
+  readonly property string headerTitle: creating ? strings.t("pluginssection.text.1", "Add a plugin")
     : opened === null ? ""
     : String(opened.name) + (opened.verified === true ? "  \uf058" : "")
   readonly property bool headerBack: openPlugin !== "" || creating
@@ -266,13 +267,15 @@ Ui.SectionBody {
 
       Ui.Chip {
         visible: page.openPlugin === "" && !page.creating
-        text: "Add a plugin"
+        text: strings.t("pluginssection.text.1", "Add a plugin")
         onClicked: page.startCreating()
       }
 
       Ui.Chip {
         visible: page.openPlugin === "" && !page.creating
-        text: page.busy ? "Checking…" : "Check for updates"
+        text: page.busy
+          ? strings.t("shared.checking", "Checking…")
+          : strings.t("shared.checkUpdates", "Check for updates")
         onClicked: page.checkUpdates()
       }
     }
@@ -294,10 +297,10 @@ Ui.SectionBody {
       // phrased alike. "Ones you installed" beside "Comes with Omarchy" was
       // a noun phrase beside a verb phrase, and the pair read as two
       // unrelated filters rather than as a split of the same list.
-      { id: "yours", title: "Installed by you" },
-      { id: "builtin", title: "Built into Omarchy" }
+      { id: "yours", title: strings.t("pluginssection.title.2", "Installed by you")},
+      { id: "builtin", title: strings.t("pluginssection.title.3", "Built into Omarchy")}
     ]
-    if (waiting.length > 0) out.push({ id: "updates", title: "Ready to update" })
+    if (waiting.length > 0) out.push({ id: "updates", title: strings.t("pluginssection.title.4", "Ready to update")})
     return out
   }
 
@@ -372,14 +375,14 @@ Ui.SectionBody {
   // How long ago in words, so a stale answer says so rather than passing
   // itself off as current.
   readonly property string checkedAgo: {
-    if (checkedAt <= 0) return "never"
+    if (checkedAt <= 0) return strings.t("pluginssection.never", "never")
     var mins = Math.floor((Date.now() / 1000 - checkedAt) / 60)
-    if (mins < 1) return "just now"
-    if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago")
+    if (mins < 1) return strings.t("shared.justNow", "just now")
+    if (mins < 60) return strings.tn("pluginssection.agoMinutes", mins, "1 minute ago").arg(mins)
     var hours = Math.floor(mins / 60)
-    if (hours < 24) return hours + (hours === 1 ? " hour ago" : " hours ago")
+    if (hours < 24) return strings.tn("pluginssection.agoHours", hours, "1 hour ago").arg(hours)
     var days = Math.floor(hours / 24)
-    return days + (days === 1 ? " day ago" : " days ago")
+    return strings.tn("pluginssection.agoDays", days, "1 day ago").arg(days)
   }
 
   // Counted over the plugins, not over the sweep's answers. The sweep walks
@@ -402,18 +405,20 @@ Ui.SectionBody {
   function standing(p) {
     if (p === null || p === undefined) return "—"
     if (p.verified === true)
-      return p.verifiedAt !== "" ? "Verified " + shortDate(p.verifiedAt) : "Verified"
+      return p.verifiedAt !== "" ? strings.t("pluginssection.verifiedAt", "Verified %1").arg(shortDate(p.verifiedAt))
+        : strings.t("pluginssection.verified", "Verified")
     if (p.listed === true && p.reviewed === true) {
-      if (p.head !== p.reviewedCommit) return "Listed, this version not verified"
-      if (p.pristine === false) return "Listed, changed on this machine"
-      return "Listed, this copy not checked"
+      if (p.head !== p.reviewedCommit) return strings.t("pluginssection.listedVersionUnverified", "Listed, this version not verified")
+      if (p.pristine === false) return strings.t("pluginssection.listedChanged", "Listed, changed on this machine")
+      return strings.t("pluginssection.listedCopyUnchecked", "Listed, this copy not checked")
     }
-    if (p.listed === true) return "Listed, not verified"
-    if (p.contested === true) return "Listed, installed twice"
+    if (p.listed === true) return strings.t("pluginssection.listedUnverified", "Listed, not verified")
+    if (p.contested === true) return strings.t("pluginssection.listedTwice", "Listed, installed twice")
     if (p.elsewhere === true)
-      return p.matchable === true ? "Listed from another repository" : "Listed, source unknown"
-    if (p.looked === true) return "Not listed"
-    return "Not checked yet"
+      return p.matchable === true ? strings.t("pluginssection.listedElsewhere", "Listed from another repository")
+        : strings.t("pluginssection.listedSourceUnknown", "Listed, source unknown")
+    if (p.looked === true) return strings.t("pluginssection.notListed", "Not listed")
+    return strings.t("shared.notChecked", "Not checked yet")
   }
 
   // An ISO instant as a date anyone reads. Taken apart rather than parsed:
@@ -429,7 +434,8 @@ Ui.SectionBody {
 
   function askRemove(p) {
     if (p === null || p === undefined) return
-    app.askConfirm("Remove " + p.name + "?", "Remove", function() {
+    app.askConfirm(strings.t("pluginssection.removeAsk", "Remove %1?").arg(p.name),
+                   strings.t("pluginssection.removeConfirm", "Remove"), function() {
       page.handOff(["plugin", "remove", String(p.id)])
       page.openPlugin = ""
     })
@@ -450,25 +456,26 @@ Ui.SectionBody {
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "Updates waiting"
-        value: !page.checked ? "—" : (page.updatesFound === 0 ? "None" : String(page.updatesFound))
-        note: page.checked ? "Checked " + page.checkedAgo : "Not checked yet"
+        label: strings.t("pluginssection.label.1", "Updates waiting")
+        value: !page.checked ? "—" : (page.updatesFound === 0 ? strings.t("pluginssection.none", "None") : String(page.updatesFound))
+        note: page.checked ? strings.t("pluginssection.checkedAgoLabel", "Checked %1").arg(page.checkedAgo)
+                        : strings.t("shared.notChecked", "Not checked yet")
       }
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "Switched on"
+        label: strings.t("pluginssection.label.2", "Switched on")
         value: page.items.length > 0 ? String(page.report.on) : "—"
         note: page.items.length > 0
-          ? "of " + page.report.installed + " the shell has" : ""
+          ? strings.t("pluginssection.ofShellHas", "of %1 the shell has").arg(page.report.installed) : ""
       }
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "On disk"
+        label: strings.t("pluginssection.label.3", "On disk")
         value: page.report.diskBytes > 0 ? page.app.formatBytes(page.report.diskBytes) : "—"
         note: page.yoursCount > 0
-          ? "across " + page.yoursCount + " you installed" : ""
+          ? strings.t("pluginssection.acrossYouInstalled", "across %1 you installed").arg(page.yoursCount) : ""
       }
     }
   }
@@ -482,8 +489,8 @@ Ui.SectionBody {
   // the button that acts on it.
   Ui.SettingGroup {
     visible: !searchEmpty && page.creating
-    note: "Adding one reloads the shell's plugins, so this window closes for "
-      + "a moment and comes back with the result."
+    note: strings.t("pluginssection.note.1", "Adding one reloads the shell's plugins, so this window closes for ")
+      + strings.t("pluginssection.closesForAMoment", "a moment and comes back with the result.")
 
     Column {
       width: parent.width
@@ -491,15 +498,16 @@ Ui.SectionBody {
 
       Ui.FormField {
         id: urlField
-        label: "Git URL"
+        label: strings.t("pluginssection.label.4", "Git URL")
         placeholder: "https://github.com/acme/omarchy-weather"
-        error: text.trim() === "" ? "Give it a git URL."
-          : /\s/.test(text.trim()) ? "A git URL cannot contain spaces."
+        error: text.trim() === "" ? strings.t("pluginssection.errUrlEmpty", "Give it a git URL.")
+          : /\s/.test(text.trim()) ? strings.t("pluginssection.errUrlSpaces", "A git URL cannot contain spaces.")
           // Refused before it is sent anywhere: the address would travel as
           // an argument, to the window's own commands and to git's download,
           // where everyone on this computer can read it.
           : /^https?:\/\/[^\/]*@/i.test(text.trim())
-            ? "Leave the password out of the address. While it downloads, anyone on this computer could read it."
+            ? strings.t("pluginssection.errUrlPassword",
+                "Leave the password out of the address. While it downloads, anyone on this computer could read it.")
           : ""
         onAccepted: addButton.clicked()
       }
@@ -521,7 +529,7 @@ Ui.SectionBody {
         Text {
           textFormat: Text.PlainText
           anchors.verticalCenter: enableSwitch.verticalCenter
-          text: "Switch it on once it is added"
+          text: strings.t("pluginssection.text.2", "Switch it on once it is added")
           color: Ui.Palette.foreground
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.bodySmall
@@ -540,10 +548,12 @@ Ui.SectionBody {
       Ui.NoticeRow {
         glyph: "\uf071"
         urgent: true
-        label: "A plugin is code running inside your shell"
-        description: "Not a sandbox and not a separate process: it runs in the "
-          + "one that draws your bar, with everything you can reach. Add "
-          + "repositories you trust, and read a plugin before switching it on."
+        label: strings.t("pluginssection.label.5", "A plugin is code running inside your shell")
+        description: strings.t("pluginssection.description.1", "Not a sandbox and not a separate process: it runs in the ")
+          + strings.t("pluginssection.runsInShell",
+              "one that draws your bar, with everything you can reach. Add ")
+          + strings.t("pluginssection.trustAndRead",
+              "repositories you trust, and read a plugin before switching it on.")
       }
 
       Row {
@@ -551,7 +561,7 @@ Ui.SectionBody {
 
         Button {
           id: addButton
-          text: "Add plugin"
+          text: strings.t("pluginssection.text.3", "Add plugin")
           bordered: true
           enabled: urlField.error === "" && !page.working
           opacity: enabled ? 1 : 0.4
@@ -568,7 +578,7 @@ Ui.SectionBody {
         }
 
         Button {
-          text: "Cancel"
+          text: strings.t("pluginssection.text.4", "Cancel")
           foreground: Ui.Palette.foreground
           accent: Ui.Palette.accent
           fontFamily: Ui.Palette.fontFamily
@@ -580,7 +590,7 @@ Ui.SectionBody {
 
   Ui.SettingGroup {
     visible: !searchEmpty && page.openPlugin === "" && !page.creating
-    title: "Plugins"
+    title: strings.t("pluginssection.title.1", "Plugins")
 
     // A clone is seconds of network and then a reload that takes this window
     // with it, so most of the time the reader sees this on the way back
@@ -590,7 +600,7 @@ Ui.SectionBody {
     Ui.NoticeRow {
       visible: !searchHidden && page.addingNow
       glyph: "\uf019"
-      label: "Adding a plugin"
+      label: strings.t("pluginssection.label.6", "Adding a plugin")
       description: page.adding !== null ? String(page.adding.url) : ""
     }
 
@@ -602,7 +612,7 @@ Ui.SectionBody {
       glyph: page.addResult !== null && page.addResult.ok === true ? "\uf058" : "\uf071"
       urgent: page.addResult !== null && page.addResult.ok !== true
       label: page.addResult !== null && page.addResult.ok === true
-        ? "Added" : "Could not add it"
+        ? strings.t("pluginssection.added", "Added") : strings.t("pluginssection.couldNotAdd", "Could not add it")
       description: page.addResult !== null ? String(page.addResult.message) : ""
       dismissable: true
       onDismissed: page.app.clearPluginAdd()
@@ -625,20 +635,20 @@ Ui.SectionBody {
 
     Ui.DataTable {
       navigable: true
-      rowActionLabel: "Open"
+      rowActionLabel: strings.t("pluginssection.rowActionLabel.1", "Open")
       // The two counts are headed by their own mark rather than by a word.
       // "Hearts" and "GitHub stars" are wider than any figure under them, and
       // a column headed by a word it is three times the width of is a column
       // spent on its own label.
       columns: {
-        var cols = [{ title: "Plugin", weight: 2.2 }]
+        var cols = [{ title: strings.t("pluginssection.title.5", "Plugin"), weight: 2.2 }]
         if (!page.builtinList) {
-          cols.push({ title: "Author", weight: 1.2 })
-          cols.push({ title: "Installed", weight: 1 })
-          cols.push({ title: "Available", weight: 1 })
+          cols.push({ title: strings.t("pluginssection.title.6", "Author"), weight: 1.2 })
+          cols.push({ title: strings.t("pluginssection.title.7", "Installed"), weight: 1 })
+          cols.push({ title: strings.t("pluginssection.title.8", "Available"), weight: 1 })
           cols.push({ title: "\uf004", weight: 0.55, align: "center" })
           cols.push({ title: "\uf005", weight: 0.55, align: "center" })
-          cols.push({ title: "Size", weight: 0.85, align: "right" })
+          cols.push({ title: strings.t("pluginssection.title.9", "Size"), weight: 0.85, align: "right" })
         }
         // Headed by nothing. "Update" over a column of Update buttons is the
         // same word twice, and there is no other word for what these do.
@@ -649,10 +659,12 @@ Ui.SectionBody {
         // Last, and hard against the edge: the switch is the one thing on
         // the row that is neither a reading nor a hand-off to somewhere
         // else, and the end of the row is where a hand reaches for it.
-        cols.push({ title: "State", weight: 0.9, align: "right" })
+        cols.push({ title: strings.t("pluginssection.title.10", "State"), weight: 0.9, align: "right" })
         return cols
       }
-      emptyNote: page.items.length === 0 ? "Looking for plugins…" : "Nothing here."
+      emptyNote: page.items.length === 0
+        ? strings.t("pluginssection.looking", "Looking for plugins…")
+        : strings.t("shared.nothingHere", "Nothing here.")
       rows: {
         var out = []
         for (var i = 0; i < page.shown.length; i++) {
@@ -686,10 +698,10 @@ Ui.SectionBody {
             // Empty is reserved for exactly that: never asked. The sweep
             // prints each verdict as its own fetch settles, so the cells
             // fill one row at a time rather than all at the end.
-            { text: page.checking[id] === true ? "checking…"
-                : n === -1 ? "not from git"
-                : n === -2 ? "unreachable"
-                : n === -3 ? "not checked"
+            { text: page.checking[id] === true ? strings.t("pluginssection.checkingLower", "checking…")
+                : n === -1 ? strings.t("pluginssection.notFromGit", "not from git")
+                : n === -2 ? strings.t("pluginssection.unreachable", "unreachable")
+                : n === -3 ? strings.t("pluginssection.notCheckedLower", "not checked")
                 : ahead !== undefined ? String(ahead)
                 : n === 0 ? String(p.version) : "",
               strong: n > 0 },
@@ -707,12 +719,12 @@ Ui.SectionBody {
             // failure leaves the commits waiting, so the button comes back
             // and the notice under the table says what happened.
             page.updating[id] !== undefined
-              ? { action: "Updating…", id: "update", actionEnabled: false, align: "right" }
+              ? { action: strings.t("pluginssection.updating", "Updating…"), id: "update", actionEnabled: false, align: "right" }
               : n > 0
-                ? { action: "Update", id: "update", actionEnabled: !page.working,
+                ? { action: strings.t("pluginssection.update", "Update"), id: "update", actionEnabled: !page.working,
                     align: "right" }
                 : { text: page.fresh(page.updateResult[id])
-                      && page.updateResult[id].ok === true ? "Updated" : "",
+                      && page.updateResult[id].ok === true ? strings.t("pluginssection.updated", "Updated") : "",
                     align: "right" },
             // The switch is the state as well as the way to change it, so
             // the word under State went with the gear: "On" beside a switch
@@ -721,7 +733,7 @@ Ui.SectionBody {
             // moves, which is the one thing a dead switch cannot say for
             // itself.
             p.canDisable === false
-              ? { text: "Always on" }
+              ? { text: strings.t("pluginssection.text.5", "Always on")}
               : { toggle: true, on: p.enabled === true, id: "toggle" }
           ]
           // The headings above drop five of the columns for the built-in
@@ -757,7 +769,7 @@ Ui.SectionBody {
         required property var modelData
         glyph: "\uf071"
         urgent: true
-        label: "Could not update " + modelData.name
+        label: strings.t("pluginssection.couldNotUpdate", "Could not update %1").arg(modelData.name)
         description: modelData.message
       }
     }
@@ -780,22 +792,22 @@ Ui.SectionBody {
       // one value here that is a sentence rather than a figure, and the one
       // worth reading after all the figures.
       layout: [
-        { key: "version", label: "Version" },
-        { key: "available", label: "Available" },
-        { key: "author", label: "Author" },
-        { key: "license", label: "Licence" },
+        { key: "version", label: strings.t("pluginssection.label.14", "Version")},
+        { key: "available", label: strings.t("pluginssection.label.15", "Available")},
+        { key: "author", label: strings.t("pluginssection.label.16", "Author")},
+        { key: "license", label: strings.t("pluginssection.label.17", "Licence")},
         { rule: true },
-        { key: "size", label: "Size on disk" },
-        { key: "history", label: "Of that, history" },
-        { key: "provides", label: "Provides" },
-        { key: "category", label: "Category" },
+        { key: "size", label: strings.t("pluginssection.label.18", "Size on disk")},
+        { key: "history", label: strings.t("pluginssection.label.19", "Of that, history")},
+        { key: "provides", label: strings.t("pluginssection.label.20", "Provides")},
+        { key: "category", label: strings.t("pluginssection.label.21", "Category")},
         { rule: true },
-        { key: "hearts", label: "Hearts" },
-        { key: "stars", label: "GitHub stars" },
-        { key: "views", label: "Views" },
-        { key: "copies", label: "Installs copied" },
+        { key: "hearts", label: strings.t("pluginssection.label.22", "Hearts")},
+        { key: "stars", label: strings.t("pluginssection.label.23", "GitHub stars")},
+        { key: "views", label: strings.t("pluginssection.label.24", "Views")},
+        { key: "copies", label: strings.t("pluginssection.label.25", "Installs copied")},
         { rule: true },
-        { key: "standing", label: "Marketplace", span: 4 }
+        { key: "standing", label: strings.t("pluginssection.label.26", "Marketplace"), span: 4 }
       ]
       values: ({
         "version": page.opened !== null && String(page.opened.version) !== ""
@@ -833,17 +845,17 @@ Ui.SectionBody {
     if (opened === null) return "—"
     var id = String(opened.id)
     var n = behind[id] === undefined ? 0 : behind[id]
-    if (n === -1) return "Not a git checkout"
-    if (n === -2) return "Could not reach its remote"
+    if (n === -1) return strings.t("pluginssection.notGitCheckout", "Not a git checkout")
+    if (n === -2) return strings.t("pluginssection.cannotReachRemote", "Could not reach its remote")
     // Fetching would show the password in its address to everyone on this
     // computer while it ran, so nothing was asked.
-    if (n === -3) return "Not checked: its address holds a password"
-    if (!checked) return "Not checked yet"
+    if (n === -3) return strings.t("pluginssection.notCheckedPassword", "Not checked: its address holds a password")
+    if (!checked) return strings.t("shared.notChecked", "Not checked yet")
     var ahead = upstream[id]
     if (n > 0)
       return (ahead !== undefined ? String(ahead) + " · " : "")
-        + n + (n === 1 ? " commit" : " commits") + " behind"
-    return "Up to date"
+        + strings.tn("update.commitsBehind", n, "1 commit behind").arg(n)
+    return strings.t("pluginssection.upToDate", "Up to date")
   }
 
   readonly property string providesText: {
@@ -853,11 +865,11 @@ Ui.SectionBody {
     var words = []
     for (var i = 0; i < kinds.length; i++) {
       var k = String(kinds[i])
-      words.push(k === "bar-widget" ? "A bar widget"
-        : k === "bar" ? "The bar"
-        : k === "panel" ? "A panel"
-        : k === "overlay" ? "An overlay"
-        : k === "service" ? "A service"
+      words.push(k === "bar-widget" ? strings.t("pluginssection.kindBarWidget", "A bar widget")
+        : k === "bar" ? strings.t("pluginssection.kindBar", "The bar")
+        : k === "panel" ? strings.t("pluginssection.kindPanel", "A panel")
+        : k === "overlay" ? strings.t("pluginssection.kindOverlay", "An overlay")
+        : k === "service" ? strings.t("pluginssection.kindService", "A service")
         : k)
     }
     return words.join(", ")
@@ -879,9 +891,9 @@ Ui.SectionBody {
         && String(page.opened.status) === "Compatibility failed"
       glyph: ""
       urgent: true
-      label: "The marketplace could not get this one working"
-      description: "Its last check of this plugin failed against the current Omarchy. "
-        + "It may still run here; it is no longer offered to anyone else."
+      label: strings.t("pluginssection.label.7", "The marketplace could not get this one working")
+      description: strings.t("pluginssection.description.2", "Its last check of this plugin failed against the current Omarchy. ")
+        + strings.t("pluginssection.mayStillRun", "It may still run here; it is no longer offered to anyone else.")
     }
 
     Ui.NoticeRow {
@@ -893,23 +905,23 @@ Ui.SectionBody {
       // it is usually nothing to act on. A copy whose id is listed from
       // somewhere it did not come from is the case that matters: the review
       // exists, and it is of other code.
-      label: "Nobody has reviewed this one"
+      label: strings.t("pluginssection.label.8", "Nobody has reviewed this one")
       description: page.opened === null || page.opened.elsewhere !== true
-        ? "It is not on plugins.omarchy.org, which is expected for one of "
-          + "your own or one installed straight from a git URL."
+        ? strings.t("pluginssection.unreviewedPlain",
+            "It is not on plugins.omarchy.org, which is expected for one of your own or one installed straight from a git URL.")
         : page.opened.contested === true
-          ? "More than one copy here claims this id and only one of them runs, so "
-            + "neither can be matched to the plugins.omarchy.org listing."
+          ? strings.t("pluginssection.unreviewedContested",
+              "More than one copy here claims this id and only one of them runs, so neither can be matched to the plugins.omarchy.org listing.")
         : page.opened.matchable === true
-          ? "plugins.omarchy.org lists this id from a different repository than the "
-            + "one this copy was cloned from"
+          ? strings.t("pluginssection.unreviewedElsewhere",
+              "plugins.omarchy.org lists this id from a different repository than the one this copy was cloned from")
             + (page.opened.elsewhereReviewed === true
-               ? ", so its review is of that code, not this." : ".")
+               ? strings.t("pluginssection.unreviewedElsewhereReviewed", ", so its review is of that code, not this.") : ".")
         : page.opened.origin === ""
-          ? "This copy does not say where it was cloned from, so it cannot be "
-            + "matched to the plugins.omarchy.org listing under the same id."
-          : "The plugins.omarchy.org listing under this id does not name its "
-            + "repository, so this copy cannot be matched to it."
+          ? strings.t("pluginssection.unreviewedNoOrigin",
+              "This copy does not say where it was cloned from, so it cannot be matched to the plugins.omarchy.org listing under the same id.")
+          : strings.t("pluginssection.unreviewedNoRepo",
+              "The plugins.omarchy.org listing under this id does not name its repository, so this copy cannot be matched to it.")
     }
 
     // Listed and verified, but not this copy. The grid says that much; what it
@@ -917,27 +929,28 @@ Ui.SectionBody {
     Ui.NoticeRow {
       visible: !searchHidden && page.opened !== null && page.opened.listed === true
         && page.opened.reviewed === true && page.opened.verified !== true
-      label: "This copy is not the one that was reviewed"
+      label: strings.t("pluginssection.label.9", "This copy is not the one that was reviewed")
       description: {
         if (page.opened === null) return ""
         var reviewed = String(page.opened.reviewedCommit).slice(0, 7)
         if (page.opened.head !== page.opened.reviewedCommit)
-          return "plugins.omarchy.org verified commit " + reviewed + ", and this copy is at "
-            + (page.opened.head !== "" ? String(page.opened.head).slice(0, 7) : "no commit")
-            + "."
+          return strings.t("pluginssection.verifiedCommitAt",
+              "plugins.omarchy.org verified commit %1, and this copy is at %2.")
+            .arg(reviewed).arg(page.opened.head !== "" ? String(page.opened.head).slice(0, 7) : strings.t("pluginssection.noCommit", "no commit"))
         if (page.opened.pristine === false)
-          return "Files here differ from commit " + reviewed
-            + ", the one plugins.omarchy.org verified."
-        return "Its files could not be read in time to compare them with commit "
-          + reviewed + ", the one plugins.omarchy.org verified."
+          return strings.t("pluginssection.filesDiffer",
+              "Files here differ from commit %1, the one plugins.omarchy.org verified.").arg(reviewed)
+        return strings.t("pluginssection.filesUnreadable",
+            "Its files could not be read in time to compare them with commit %1, the one plugins.omarchy.org verified.")
+            .arg(reviewed)
       }
     }
 
     Ui.SwitchRow {
-      label: "Enabled"
+      label: strings.t("pluginssection.label.10", "Enabled")
       description: page.opened !== null && page.opened.canDisable === false
-        ? "The shell will not start without this one."
-        : "Off leaves it installed and loads none of it."
+        ? strings.t("pluginssection.alwaysOnWhy", "The shell will not start without this one.")
+        : strings.t("pluginssection.offKeepsInstalled", "Off leaves it installed and loads none of it.")
       enabled: page.opened !== null && page.opened.canDisable !== false
       checked: page.opened !== null && page.opened.enabled === true
       onRequested: page.toggle(page.opened)
@@ -946,27 +959,27 @@ Ui.SectionBody {
     Ui.ActionRow {
       visible: !searchHidden && page.opened !== null
         && (page.behind[String(page.opened.id)] || 0) > 0
-      label: "Update"
+      label: strings.t("pluginssection.label.11", "Update")
       description: {
         if (page.opened === null) return ""
         var id = String(page.opened.id)
         var n = page.behind[id] || 0
         var subjects = (page.changes[id] || "").split("|").join(" · ")
-        return n + (n === 1 ? " commit" : " commits") + " waiting"
+        return strings.tn("pluginssection.commitsWaiting", n, "1 commit waiting").arg(n)
           + (subjects !== "" ? " · " + subjects : "")
-          + ". The window closes for a moment while the shell reloads."
+          + strings.t("pluginssection.updateCloses", ". The window closes for a moment while the shell reloads.")
       }
       buttonText: page.opened !== null && page.updating[String(page.opened.id)] !== undefined
-        ? "Updating…" : "Update"
+        ? strings.t("pluginssection.updating", "Updating…") : strings.t("pluginssection.update", "Update")
       actionEnabled: !page.working
       onTriggered: page.updateOne(String(page.opened.id))
     }
 
     Ui.ActionRow {
       visible: !searchHidden && page.opened !== null && String(page.opened.repo) !== ""
-      label: "Repository"
+      label: strings.t("pluginssection.label.12", "Repository")
       description: page.opened !== null ? String(page.opened.repo) : ""
-      buttonText: "Open"
+      buttonText: strings.t("pluginssection.buttonText.1", "Open")
       onTriggered: { page.app.run(["plugin", "site", String(page.opened.id)]); page.app.hide() }
     }
 
@@ -974,9 +987,9 @@ Ui.SectionBody {
     // with the next Omarchy update anyway.
     Ui.ActionRow {
       visible: !searchHidden && page.opened !== null && page.opened.firstParty !== true
-      label: "Remove"
-      description: "Deletes the plugin and its checkout. Omarchy lists what goes and asks in a terminal."
-      buttonText: "Remove"
+      label: strings.t("pluginssection.label.13", "Remove")
+      description: strings.t("pluginssection.description.3", "Deletes the plugin and its checkout. Omarchy lists what goes and asks in a terminal.")
+      buttonText: strings.t("pluginssection.buttonText.2", "Remove")
       onTriggered: page.askRemove(page.opened)
     }
   }

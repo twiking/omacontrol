@@ -8,6 +8,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var wifi: app.wifi
@@ -31,7 +32,7 @@ Ui.SectionBody {
         anchors.verticalCenter: parent.verticalCenter
         visible: page.connected
         iconText: "\udb81\udc32"
-        text: "Show QR code"
+        text: strings.t("networksection.text.1", "Show QR code")
         bordered: true
         foreground: Ui.Palette.foreground
         accent: Ui.Palette.accent
@@ -51,7 +52,7 @@ Ui.SectionBody {
         anchors.verticalCenter: parent.verticalCenter
         visible: page.connected
         iconText: "\udb81\udcc5"
-        text: "Run speed test"
+        text: strings.t("networksection.text.2", "Run speed test")
         bordered: true
         foreground: Ui.Palette.foreground
         accent: Ui.Palette.accent
@@ -68,7 +69,7 @@ Ui.SectionBody {
         textFormat: Text.PlainText
         anchors.verticalCenter: parent.verticalCenter
         visible: page.hasRadio
-        text: "Wi-Fi"
+        text: strings.t("networksection.text.3", "Wi-Fi")
         color: Ui.Palette.foreground
         font.family: Ui.Palette.fontFamily
         font.pixelSize: Style.font.caption
@@ -89,9 +90,9 @@ Ui.SectionBody {
   // Which network you are on is in the card below; the header only says
   // whether there is a radio at all and whether it is on.
   readonly property string headerNote: {
-    if (wifi.available === false) return "NetworkManager is not running"
-    if (!hasRadio) return "No wireless hardware"
-    return wifi.enabled === true ? "" : "Off"
+    if (wifi.available === false) return strings.t("networksection.noNetworkManager", "NetworkManager is not running")
+    if (!hasRadio) return strings.t("networksection.noRadio", "No wireless hardware")
+    return wifi.enabled === true ? "" : strings.t("networksection.off", "Off")
   }
 
   // "3 927", as the mockup writes it.
@@ -112,8 +113,9 @@ Ui.SectionBody {
     // the word was on screen whenever it could be read and told nobody
     // anything. The signal leads instead, since it is the part that changes.
     if (link.signalDbm !== undefined && link.signalDbm !== null) {
-      var phrase = link.signalDbm >= -60 ? "Strong signal"
-                 : link.signalDbm >= -72 ? "Fair signal" : "Weak signal"
+      var phrase = link.signalDbm >= -60 ? strings.t("networksection.signalStrong", "Strong signal")
+                 : link.signalDbm >= -72 ? strings.t("networksection.signalFair", "Fair signal")
+                 : strings.t("networksection.signalWeak", "Weak signal")
       // The words say what to make of it, the number says how much room there
       // is above or below. It is NetworkManager's percentage, the same one the
       // bars beside it are drawn from, so the three cannot disagree.
@@ -141,27 +143,27 @@ Ui.SectionBody {
     // The address the world sees leads, then the one this machine holds on the
     // network — and both say which they are, since "IP address" beside a
     // second address is the reader's problem to work out.
-    { key: "publicip", label: "Public IP" },
-    { key: "ip", label: "Local IP" },
-    { key: "gateway", label: "Gateway" },
+    { key: "publicip", label: strings.t("networksection.label.4", "Public IP")},
+    { key: "ip", label: strings.t("networksection.label.5", "Local IP")},
+    { key: "gateway", label: strings.t("networksection.label.6", "Gateway")},
     // One column is enough now that the servers are stacked rather than run
     // together, so the addressing row is four cells wide and nothing wraps.
-    { key: "dns", label: "Name servers" },
+    { key: "dns", label: strings.t("networksection.label.7", "Name servers")},
     // Where you are on the network, then everything about the link. The three
     // above are what someone copies out of this card; the rest is what they
     // read, so it sits under a rule and a size down.
     { rule: true },
-    { key: "channel", label: "Channel", small: true },
-    { key: "iface", label: "Interface", small: true },
-    { key: "connectedFor", label: "Connected for", small: true },
-    { key: "apFor", label: "On this access point", small: true },
-    { key: "rx", label: "Receiving", small: true },
-    { key: "tx", label: "Sending", small: true },
-    { key: "ping", label: "Ping to router", small: true },
-    { key: "session", label: "This session", small: true },
-    { key: "boot", label: "Since boot", small: true },
-    { key: "retries", label: "Frames retried", small: true },
-    { key: "beacons", label: "Beacons missed", small: true }
+    { key: "channel", label: strings.t("networksection.label.8", "Channel"), small: true },
+    { key: "iface", label: strings.t("networksection.label.9", "Interface"), small: true },
+    { key: "connectedFor", label: strings.t("networksection.label.10", "Connected for"), small: true },
+    { key: "apFor", label: strings.t("networksection.label.11", "On this access point"), small: true },
+    { key: "rx", label: strings.t("networksection.label.12", "Receiving"), small: true },
+    { key: "tx", label: strings.t("networksection.label.13", "Sending"), small: true },
+    { key: "ping", label: strings.t("networksection.label.14", "Ping to router"), small: true },
+    { key: "session", label: strings.t("networksection.label.15", "This session"), small: true },
+    { key: "boot", label: strings.t("networksection.label.16", "Since boot"), small: true },
+    { key: "retries", label: strings.t("networksection.label.17", "Frames retried"), small: true },
+    { key: "beacons", label: strings.t("networksection.label.18", "Beacons missed"), small: true }
   ]
 
   readonly property var factValues: {
@@ -311,7 +313,7 @@ Ui.SectionBody {
         id: leave
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        text: "Disconnect"
+        text: strings.t("networksection.text.4", "Disconnect")
         bordered: true
         foreground: Ui.Palette.foreground
         accent: Ui.Palette.accent
@@ -366,9 +368,12 @@ Ui.SectionBody {
       // prints as "Frames retried", so the strip and the card agree.
       textFormat: Text.StyledText
       text: page.link.retryShare !== undefined && page.link.retryShare !== null
-        ? "<b>Channel busy</b> \u2014 pages may stall: " + page.link.retryShare.toFixed(0)
-          + " % of frames were retried even though the signal is strong. "
-          + "Something else is using channel " + page.link.channel + "."
+        ? strings.t("networksection.channelBusy", "<b>Channel busy</b> \u2014 pages may stall: ")
+          + strings.t("networksection.framesRetried",
+              "%1 % of frames were retried even though the signal is strong. ")
+              .arg(page.link.retryShare.toFixed(0))
+          + strings.t("networksection.channelUsed",
+              "Something else is using channel %1.").arg(page.link.channel)
         : ""
       color: Ui.Palette.foreground
       font.family: Ui.Palette.fontFamily
@@ -380,13 +385,14 @@ Ui.SectionBody {
   Ui.SettingGroup {
     rowSpacing: Style.space(2)
     framed: page.app.otherNetworks.length > 0
-    title: page.connected ? "Other networks" : "Networks"
+    title: page.connected ? strings.t("networksection.otherNetworks", "Other networks")
+                          : strings.t("networksection.networks", "Networks")
     // Nothing while there is a list — the list is the answer. "Looking" only
     // until the first scan lands, and once the network we are on proves one
     // has, an empty list means there is genuinely nothing else here.
     note: !page.radioOn || page.app.otherNetworks.length > 0 ? ""
-      : page.app.wifiNetworks.length > 0 ? "Nothing else in range."
-                                    : "Looking for networks…"
+      : page.app.wifiNetworks.length > 0 ? strings.t("networksection.nothingInRange", "Nothing else in range.")
+                                    : strings.t("networksection.looking", "Looking for networks…")
     visible: !searchEmpty && page.radioOn
     // No card around nothing: an empty rounded box reads as a list that failed
     // to load, where the note above it has already given the answer.
@@ -416,10 +422,10 @@ Ui.SectionBody {
 
   // ---- settings ------------------------------------------------------------
   Ui.SettingGroup {
-    title: "Wi-Fi"
+    title: strings.t("networksection.title.1", "Wi-Fi")
 
     Ui.PickerRow {
-      label: "Band"
+      label: strings.t("networksection.label.1", "Band")
       visible: !searchHidden && page.connected && page.app.bandOptions().length > 1
       value: page.app.wifiBand.selected !== undefined ? String(page.app.wifiBand.selected) : "auto"
       options: page.app.bandOptions()
@@ -427,7 +433,7 @@ Ui.SectionBody {
     }
 
     Ui.ChoiceRow {
-      label: "DNS provider"
+      label: strings.t("networksection.label.2", "DNS provider")
       value: page.app.group("dns").current
       options: page.app.groupOptions("dns")
       onPicked: function(next) { page.app.run(["menu", "run", "setup.network.dns." + next]) }
@@ -450,7 +456,7 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Wired"
+    title: strings.t("networksection.title.2", "Wired")
     visible: !searchEmpty && page.wiredPlugged.length > 0
 
     Repeater {
@@ -460,7 +466,9 @@ Ui.SectionBody {
         required property var modelData
         width: parent.width
         label: String(modelData.device)
-        description: modelData.speedMbit ? "Link at " + modelData.speedMbit + " Mbit/s" : "Cable connected"
+        description: modelData.speedMbit
+          ? strings.t("networksection.linkAt", "Link at %1 Mbit/s").arg(modelData.speedMbit)
+          : strings.t("networksection.cableConnected", "Cable connected")
         value: modelData.connection ? String(modelData.connection) : String(modelData.state)
       }
     }
@@ -473,22 +481,23 @@ Ui.SectionBody {
   readonly property int hostTotal: app.hosts.total !== undefined ? app.hosts.total : 0
 
   Ui.SettingGroup {
-    title: "Hosts file"
+    title: strings.t("networksection.title.3", "Hosts file")
     note: page.hostTotal > page.hostEntries.length
-      ? "Showing the first " + page.hostEntries.length + " of " + page.hostTotal + "." : ""
+      ? strings.t("networksection.showingFirst", "Showing the first %1 of %2.")
+          .arg(page.hostEntries.length).arg(page.hostTotal) : ""
 
     Ui.ActionRow {
-      label: "Local names"
-      description: "Resolved locally, before DNS. An entry here overrides what any DNS server returns."
-      buttonText: "Edit hosts file…"
+      label: strings.t("networksection.label.3", "Local names")
+      description: strings.t("networksection.description.1", "Resolved locally, before DNS. An entry here overrides what any DNS server returns.")
+      buttonText: strings.t("networksection.buttonText.1", "Edit hosts file…")
       onTriggered: { page.app.run(["hosts", "edit"]); page.app.hide() }
     }
 
     Ui.DataTable {
       visible: page.hostEntries.length > 0
       columns: [
-        { title: "Name", weight: 3 },
-        { title: "Address", weight: 1 }
+        { title: strings.t("networksection.title.4", "Name"), weight: 3 },
+        { title: strings.t("networksection.title.5", "Address"), weight: 1 }
       ]
       rows: {
         var out = []

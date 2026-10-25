@@ -15,6 +15,7 @@ import "../ui" as Ui
 // in the shape a bug report wants.
 Ui.SectionBody {
   id: root
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var about: app.about
@@ -34,17 +35,18 @@ Ui.SectionBody {
   // problem asks for first.
   Ui.HeroCard {
     glyph: root.about.chassis === "laptop" ? "" : ""
-    title: root.known(root.about.model) ? root.about.model : "This computer"
+    title: root.known(root.about.model) ? root.about.model : strings.t("aboutsection.thisComputer", "This computer")
     subtitle: {
       var parts = []
       if (root.known(root.about.sku)) parts.push(root.about.sku)
       if (root.known(root.about.version)) parts.push("Omarchy " + root.about.version)
-      if (root.hasUptime) parts.push("up " + root.app.formatDuration(root.about.uptimeSeconds))
+      if (root.hasUptime) parts.push(strings.t("aboutsection.up", "up %1")
+                              .arg(root.app.formatDuration(root.about.uptimeSeconds)))
       return parts.join(" · ")
     }
 
     Ui.Chip {
-      text: "Copy as text"
+      text: strings.t("aboutsection.text.1", "Copy as text")
       onClicked: root.app.run(["about", "copy"])
     }
   }
@@ -62,12 +64,12 @@ Ui.SectionBody {
 
     Ui.SettingGroup {
       width: specs.cell
-      title: "Hardware"
+      title: strings.t("aboutsection.title.1", "Hardware")
       framed: true
       rowSpacing: Style.space(10)
 
       Ui.SpecRow {
-        label: "Model"
+        label: strings.t("aboutsection.label.1", "Model")
         value: (root.known(root.about.model) ? root.about.model : "")
           + (root.known(root.about.sku) ? " (" + root.about.sku + ")" : "")
       }
@@ -75,10 +77,11 @@ Ui.SectionBody {
       Ui.Divider {}
 
       Ui.SpecRow {
-        label: "CPU"
+        label: strings.t("aboutsection.label.2", "CPU")
         value: (root.known(root.about.cpu) ? root.about.cpu : "")
           + (root.known(root.about.cpuCores)
-             ? " (" + root.about.cpuCores + " cores, " + root.about.cpuThreads + " threads)" : "")
+             ? strings.t("aboutsection.cpuCores", " (%1 cores, %2 threads)")
+                .arg(root.about.cpuCores).arg(root.about.cpuThreads) : "")
           + (root.about.cpuFrequency ? " @ " + (Number(root.about.cpuFrequency) / 1000).toFixed(2) + " GHz" : "")
       }
 
@@ -89,7 +92,7 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.gpus.length > 0
-        label: "GPU"
+        label: strings.t("aboutsection.label.3", "GPU")
         value: root.gpus.join("\n")
       }
 
@@ -97,7 +100,7 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.known(root.about.memoryBytes)
-        label: "Memory"
+        label: strings.t("aboutsection.label.4", "Memory")
         value: root.app.formatBytes(root.about.memoryBytes)
       }
 
@@ -105,7 +108,7 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.about.disk !== undefined && root.known(root.about.disk.model)
-        label: "Disk"
+        label: strings.t("aboutsection.label.5", "Disk")
         value: root.about.disk !== undefined
           ? root.about.disk.model + (root.about.disk.size ? " · " + root.app.formatBytes(root.about.disk.size) : "")
           : ""
@@ -114,29 +117,30 @@ Ui.SectionBody {
 
     Ui.SettingGroup {
       width: specs.cell
-      title: "Software"
+      title: strings.t("aboutsection.title.2", "Software")
       framed: true
       rowSpacing: Style.space(10)
 
       // The channel rides with the version only when it is not stable: on
       // stable it says nothing a version number does not, on every machine.
       Ui.SpecRow {
-        label: "OS"
+        label: strings.t("aboutsection.label.6", "OS")
         value: root.known(root.about.version) ? "Omarchy " + root.about.version : ""
-        tag: root.known(root.about.channel) && root.about.channel !== "stable" ? root.about.channel + " channel" : ""
+        tag: root.known(root.about.channel) && root.about.channel !== "stable"
+          ? strings.t("overviewsection.onChannel", "%1 channel").arg(root.about.channel) : ""
       }
 
       Ui.Divider {}
 
       Ui.SpecRow {
-        label: "Kernel"
+        label: strings.t("aboutsection.label.7", "Kernel")
         value: root.known(root.about.kernel) ? root.about.kernel : ""
       }
 
       Ui.Divider {}
 
       Ui.SpecRow {
-        label: "Compositor"
+        label: strings.t("aboutsection.label.8", "Compositor")
         value: root.known(root.about.compositor) ? root.about.compositor : ""
       }
 
@@ -144,7 +148,7 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.known(root.about.packages)
-        label: "Packages"
+        label: strings.t("aboutsection.label.9", "Packages")
         value: root.about.packages + " (pacman)"
       }
 
@@ -152,7 +156,7 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.hasUptime
-        label: "Uptime"
+        label: strings.t("aboutsection.label.10", "Uptime")
         value: root.app.formatDuration(root.about.uptimeSeconds)
       }
 
@@ -162,20 +166,20 @@ Ui.SectionBody {
 
       Ui.SpecRow {
         visible: !searchHidden && root.known(root.about.osAgeDays)
-        label: "OS age"
-        value: root.about.osAgeDays + " days"
+        label: strings.t("aboutsection.label.11", "OS age")
+        value: strings.t("aboutsection.osAge", "%1 days").arg(root.about.osAgeDays)
       }
     }
   }
 
   Ui.SettingGroup {
-    title: "Updates"
+    title: strings.t("aboutsection.title.3", "Updates")
     framed: true
     rowSpacing: Style.space(10)
 
     Ui.ReadingRow {
       visible: !searchHidden && root.known(root.about.lastUpdate)
-      label: "Last updated"
+      label: strings.t("aboutsection.label.12", "Last updated")
       description: root.known(root.about.lastUpdate) ? root.about.lastUpdate : ""
       value: root.known(root.about.lastUpdateAt) ? root.app.formatWhen(root.about.lastUpdateAt) : ""
     }
@@ -187,14 +191,15 @@ Ui.SectionBody {
 
     Ui.SettingRow {
       visible: !searchHidden && Number(root.waiting.checkedAt || 0) > 0
-      label: "Waiting now"
-      navKeys: Number(root.waiting.count || 0) > 0 ? [{ key: "↵", label: "Open Packages" }] : []
+      label: strings.t("aboutsection.label.13", "Waiting now")
+      navKeys: Number(root.waiting.count || 0) > 0 ? [{ key: "↵", label: strings.t("aboutsection.label.15", "Open Packages")}] : []
       onNavActivate: if (Number(root.waiting.count || 0) > 0) root.app.pageId = "packages"
 
       Ui.Chip {
         anchors.right: parent.right
         visible: Number(root.waiting.count || 0) > 0
-        text: root.waiting.count + (Number(root.waiting.count) === 1 ? " package waiting" : " packages waiting")
+        text: strings.tn("aboutsection.packagesWaiting", root.waiting.count,
+             "1 package waiting").arg(root.waiting.count)
         onClicked: root.app.pageId = "packages"
       }
 
@@ -202,7 +207,7 @@ Ui.SectionBody {
         textFormat: Text.PlainText
         anchors.right: parent.right
         visible: Number(root.waiting.count || 0) === 0
-        text: "Up to date"
+        text: strings.t("aboutsection.text.2", "Up to date")
         color: Ui.Palette.muted
         font.family: Ui.Palette.fontFamily
         font.pixelSize: Style.font.body
@@ -215,9 +220,10 @@ Ui.SectionBody {
     // Omarchy's own command and its confirmation rather than being applied
     // from here.
     Ui.PickerRow {
-      label: "Release channel"
+      label: strings.t("aboutsection.label.14", "Release channel")
       description: root.known(root.about.channel) && root.about.channel !== "stable"
-        ? root.about.channel + " takes updates before they reach stable" : ""
+        ? strings.t("aboutsection.channelTakesUpdates",
+            "%1 takes updates before they reach stable").arg(root.about.channel) : ""
       options: ["stable", "rc", "dev"]
       value: root.about.channel !== undefined ? root.about.channel : ""
       onPicked: function(next) {

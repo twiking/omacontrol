@@ -20,6 +20,7 @@ import "../ui" as Ui
 // any other way is exactly the rule that stays behind.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var security: app.security
@@ -67,62 +68,63 @@ Ui.SectionBody {
   }
 
   function listeningText(rule) {
-    if (rule.container === true) return "Container at " + rule.to
+    if (rule.container === true) return strings.t("securitysection.containerAt", "Container at %1").arg(rule.to)
     if (rule.by.length > 0) return rule.by.join(", ")
-    if (rule.otherUser === true) return "Another user's program"
-    if (rule.unnamed === true) return "A system service"
-    if (rule.localOnly === true) return "Only this machine"
-    return "Nothing"
+    if (rule.otherUser === true) return strings.t("securitysection.otherUserProgram", "Another user's program")
+    if (rule.unnamed === true) return strings.t("securitysection.systemService", "A system service")
+    if (rule.localOnly === true) return strings.t("securitysection.onlyThisMachine", "Only this machine")
+    return strings.t("securitysection.nothing", "Nothing")
   }
 
   Ui.SettingGroup {
-    title: "Firewall"
+    title: strings.t("securitysection.title.1", "Firewall")
     visible: !searchEmpty && page.polled
 
     // What the rules below sit on top of. A firewall that is off, or one
     // whose default lets everything in, makes the list of open ports
     // meaningless, so that is said here rather than under the table.
     Ui.ReadingRow {
-      label: "Incoming connections"
+      label: strings.t("securitysection.label.1", "Incoming connections")
       description: {
-        if (!page.firewallOn && page.otherFirewall !== "") return "Its rules can only be read with an administrator's password."
-        if (!page.firewallOn) return "Every program listening on the network can be reached by anyone on it."
+        if (!page.firewallOn && page.otherFirewall !== "") return strings.t("securitysection.otherFirewallRules", "Its rules can only be read with an administrator's password.")
+        if (!page.firewallOn) return strings.t("securitysection.everyReachable", "Every program listening on the network can be reached by anyone on it.")
         var parts = []
-        if (page.letsAllIn) parts.push("Anything a rule below does not turn away is let in.")
+        if (page.letsAllIn) parts.push(strings.t("securitysection.anythingLetIn", "Anything a rule below does not turn away is let in."))
         if (page.security.dockerOpen === true)
-          parts.push("Ports Docker publishes for its containers are open to the network whatever is listed here.")
+          parts.push(strings.t("securitysection.dockerOpen", "Ports Docker publishes for its containers are open to the network whatever is listed here."))
         return parts.join(" ")
       }
-      value: !page.firewallOn && page.otherFirewall !== "" ? "Managed by " + page.otherFirewall
-        : page.security.installed !== true ? "All · no firewall"
-        : !page.firewallOn ? "All · firewall off"
-        : page.letsAllIn ? "All" : ""
+      value: !page.firewallOn && page.otherFirewall !== "" ? strings.t("securitysection.managedBy", "Managed by %1").arg(page.otherFirewall)
+        : page.security.installed !== true ? strings.t("securitysection.allNoFirewall", "All · no firewall")
+        : !page.firewallOn ? strings.t("securitysection.allFirewallOff", "All · firewall off")
+        : page.letsAllIn ? strings.t("securitysection.allAllowed", "All") : ""
     }
 
     Ui.DataTable {
       visible: page.showsRules
       columns: [
-        { title: "Port", weight: 1 },
-        { title: "For", weight: 1.4 },
-        { title: "Protocol", weight: 1 },
-        { title: "Allowed from", weight: 1.6 },
-        { title: "Listening", weight: 1.4 }
+        { title: strings.t("securitysection.title.3", "Port"), weight: 1 },
+        { title: strings.t("securitysection.title.4", "For"), weight: 1.4 },
+        { title: strings.t("securitysection.title.5", "Protocol"), weight: 1 },
+        { title: strings.t("securitysection.title.6", "Allowed from"), weight: 1.6 },
+        { title: strings.t("securitysection.title.7", "Listening"), weight: 1.4 }
       ]
       emptyNote: page.security.rulesReadable === false
-        ? "The firewall's rules could not be read." : "No ports are open."
+        ? strings.t("securitysection.rulesUnreadable", "The firewall's rules could not be read.")
+        : strings.t("securitysection.noPorts", "No ports are open.")
       rows: {
         var out = []
         for (var i = 0; i < page.rules.length; i++) {
           var r = page.rules[i]
-          var from = r.from === "any" ? "Anywhere" : String(r.from)
-          if (r.interface !== "") from = r.from === "any" ? "Over " + r.interface : from + " over " + r.interface
+          var from = r.from === "any" ? strings.t("securitysection.anywhere", "Anywhere") : String(r.from)
+          if (r.interface !== "") from = r.from === "any" ? strings.t("securitysection.over", "Over %1").arg(r.interface) : strings.t("securitysection.overTwo", "%1 over %2").arg(from).arg(r.interface)
           // Rate-limited: six attempts in thirty seconds from one address and
           // the rest are dropped, which is what keeps a password-guesser off.
-          if (r.action === "limit") from += ", rate-limited"
+          if (r.action === "limit") from += strings.t("securitysection.rateLimited", ", rate-limited")
           out.push({ cells: [
-            { text: r.port === "any" ? "All"
+            { text: r.port === "any" ? strings.t("securitysection.allPorts", "All")
                 : String(r.port).replace(/:/g, "\u2013").replace(/,/g, ", "), strong: true },
-            { text: r.container === true ? "Container"
+            { text: r.container === true ? strings.t("securitysection.container", "Container")
                 : r.app !== "" ? String(r.app)
                 : (page.portNames[r.port] !== undefined ? page.portNames[r.port] : ""),
               tag: String(r.comment || "") },
@@ -137,30 +139,30 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Signing in"
+    title: strings.t("securitysection.title.2", "Signing in")
     visible: !searchEmpty && page.polled
 
     // Only where there is a reader: the setup cannot do anything without
     // one, and a row offering it on a desktop is a row that can only fail.
     Ui.ActionRow {
-      label: "Fingerprint"
+      label: strings.t("securitysection.label.2", "Fingerprint")
       visible: !searchHidden && (page.way("fingerprint").available || page.way("fingerprint").active)
         && (page.way("fingerprint").canSetup || page.way("fingerprint").canRemove)
       description: page.way("fingerprint").active
-        ? "Set up · unlocks the screen and approves admin prompts"
-        : "Not set up · the reader here can unlock the screen and approve admin prompts"
-      buttonText: page.way("fingerprint").active ? "Remove…" : "Set up…"
+        ? strings.t("securitysection.fingerprintActive", "Set up · unlocks the screen and approves admin prompts")
+        : strings.t("securitysection.fingerprintInactive", "Not set up · the reader here can unlock the screen and approve admin prompts")
+      buttonText: page.way("fingerprint").active ? strings.t("securitysection.removeButton", "Remove…") : strings.t("securitysection.setupButton", "Set up…")
       actionEnabled: page.canRun("fingerprint")
       onTriggered: { page.app.run(["menu", "run", page.entryFor("fingerprint")]); page.app.hide() }
     }
 
     Ui.ActionRow {
-      label: "FIDO2 security key"
+      label: strings.t("securitysection.label.3", "FIDO2 security key")
       visible: !searchHidden && (page.way("fido2").canSetup || page.way("fido2").canRemove)
       description: page.way("fido2").active
-        ? "Set up · a touch of the key approves admin prompts"
-        : "Not set up · a touch of a key can approve admin prompts"
-      buttonText: page.way("fido2").active ? "Remove…" : "Set up…"
+        ? strings.t("securitysection.fido2Active", "Set up · a touch of the key approves admin prompts")
+        : strings.t("securitysection.fido2Inactive", "Not set up · a touch of a key can approve admin prompts")
+      buttonText: page.way("fido2").active ? strings.t("securitysection.removeButton", "Remove…") : strings.t("securitysection.setupButton", "Set up…")
       actionEnabled: page.canRun("fido2")
       onTriggered: { page.app.run(["menu", "run", page.entryFor("fido2")]); page.app.hide() }
     }
@@ -169,14 +171,14 @@ Ui.SectionBody {
     // takes keys only cannot be guessed into. When a config file in the way
     // could not be read, the page says the server is on and stops there.
     Ui.ActionRow {
-      label: "SSH server"
+      label: strings.t("securitysection.label.4", "SSH server")
       visible: !searchHidden && (page.way("sshd").canSetup || page.way("sshd").canRemove || page.way("sshd").active)
       description: !page.way("sshd").active
-        ? "Off · lets another computer sign in to this one with a key you authorize, and opens its port"
-        : page.way("sshd").passwords === false ? "On · accepts sign-ins from authorized keys only"
-        : page.way("sshd").passwords === true ? "On · accepts a password as well as a key"
-        : "On · accepts sign-ins from other computers"
-      buttonText: page.way("sshd").active ? "Turn off…" : "Set up…"
+        ? strings.t("securitysection.sshdOff", "Off · lets another computer sign in to this one with a key you authorize, and opens its port")
+        : page.way("sshd").passwords === false ? strings.t("securitysection.sshdKeysOnly", "On · accepts sign-ins from authorized keys only")
+        : page.way("sshd").passwords === true ? strings.t("securitysection.sshdPassword", "On · accepts a password as well as a key")
+        : strings.t("securitysection.sshdOn", "On · accepts sign-ins from other computers")
+      buttonText: page.way("sshd").active ? strings.t("securitysection.turnOffButton", "Turn off…") : strings.t("securitysection.setupButton", "Set up…")
       actionEnabled: page.canRun("sshd")
       onTriggered: { page.app.run(["menu", "run", page.entryFor("sshd")]); page.app.hide() }
     }

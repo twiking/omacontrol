@@ -258,6 +258,15 @@ out of. And hopefully someone else finds it useful too.
 omarchy plugin add https://github.com/twiking/omacontrol.git --enable
 ```
 
+## Languages
+
+The window speaks the language chosen under Setup > Language, the same way the
+shell does. Each language is one file — `i18n/fr.json` here — layered over
+`i18n/en.json`, so a string that is not translated yet falls back to English
+one string at a time, and switching language re-renders the window without a
+restart. French ships with it. Adding a language is one JSON file; plural
+entries are plain objects keyed by CLDR category.
+
 ## Migrate from OmaSettings
 
 Install OmaControl beside it and restart the shell:

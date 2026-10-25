@@ -5,6 +5,7 @@ import "." as Local
 
 Local.SettingRow {
   id: textRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property string value: ""
   property string placeholder: ""
   signal committed(string next)
@@ -37,8 +38,8 @@ Local.SettingRow {
   property bool editing: false
 
   navKeys: editing
-    ? [{ key: "\u21b5", label: clearOnCommit ? "Add" : "Save" }, { key: "Esc", label: "Cancel" }]
-    : [{ key: "\u21b5", label: "Edit" }]
+    ? [{ key: "\u21b5", label: clearOnCommit ? strings.t("textrow.add", "Add") : strings.t("textrow.save", "Save") }, { key: "Esc", label: strings.t("textrow.label.1", "Cancel")}]
+    : [{ key: "\u21b5", label: strings.t("textrow.label.2", "Edit")}]
 
   // One door for the button and the key, so the two cannot drift apart.
   function commit(next) {

@@ -17,6 +17,7 @@ import "../ui" as Ui
 // state document, like Disk and Processes.
 Ui.SectionBody {
   id: root
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var items: app.apps !== undefined && app.apps !== null ? app.apps : []
@@ -61,8 +62,10 @@ Ui.SectionBody {
   function askUninstall(entry) {
     if (entry === null || entry === undefined) return
     var made = entry.kind === "web" || entry.kind === "tui"
-    app.askConfirm((made ? "Delete " : "Uninstall ") + entry.name + "?",
-                   made ? "Delete" : "Uninstall", function() {
+    app.askConfirm((made ? strings.t("appssection.deleteAsk", "Delete %1?")
+                         : strings.t("appssection.uninstallAsk", "Uninstall %1?")).arg(entry.name),
+                   made ? strings.t("appssection.delete", "Delete")
+                        : strings.t("appssection.uninstall", "Uninstall"), function() {
       app.run(["apps", "remove", entry.id])
       // A launcher made here is a file and an icon: nothing to type, nothing
       // to approve, so the window stays and the list simply loses a row.
@@ -85,8 +88,9 @@ Ui.SectionBody {
   // The name comes from the rule when the list has not come back yet — a poll
   // arrives after the page is built, and a header that reads "aether" for a
   // second before becoming "Aether" is the window looking like it is guessing.
-  readonly property string headerTitle: creating === "webapp" ? "New web app"
-    : creating === "tui" ? "New TUI"
+  readonly property string headerTitle: creating === "webapp"
+    ? strings.t("appssection.newWebApp", "New web app")
+    : creating === "tui" ? strings.t("appssection.newTui", "New TUI")
     : openClass === "" ? ""
     : (openApp !== null ? String(openApp.name)
        : (openRule !== null && String(openRule.name || "") !== "" ? String(openRule.name)
@@ -143,13 +147,13 @@ Ui.SectionBody {
 
       Ui.Chip {
         visible: root.openClass === "" && root.creating === ""
-        text: "New web app"
+        text: strings.t("appssection.text.1", "New web app")
         onClicked: startCreating("webapp")
       }
 
       Ui.Chip {
         visible: root.openClass === "" && root.creating === ""
-        text: "New TUI"
+        text: strings.t("appssection.text.2", "New TUI")
         onClicked: startCreating("tui")
       }
     }
@@ -157,7 +161,7 @@ Ui.SectionBody {
 
   readonly property string headerNote: creating !== "" ? ""
     : openClass !== "" && openApp !== null
-    && openApp.running === true ? "running now" : ""
+    && openApp.running === true ? strings.t("appssection.runningNow", "running now") : ""
 
 
   Timer {
@@ -187,10 +191,10 @@ Ui.SectionBody {
 
       Ui.FormField {
         id: nameField
-        label: "Name"
+        label: strings.t("appssection.label.1", "Name")
         placeholder: root.creating === "webapp" ? "Linear" : "Lazydocker"
-        error: text.trim() === "" ? "Give it a name."
-          : text.indexOf("/") >= 0 ? "A name cannot contain a slash."
+        error: text.trim() === "" ? strings.t("appssection.errNameEmpty", "Give it a name.")
+          : text.indexOf("/") >= 0 ? strings.t("appssection.errNameSlash", "A name cannot contain a slash.")
           : ""
         onAccepted: root.creating === "webapp" ? urlField.focusInput() : commandField.focusInput()
       }
@@ -198,10 +202,10 @@ Ui.SectionBody {
       Ui.FormField {
         id: urlField
         visible: root.creating === "webapp"
-        label: "Address"
+        label: strings.t("appssection.label.2", "Address")
         placeholder: "https://example.com"
-        error: text.trim() === "" ? "Give it an address."
-          : /\s/.test(text.trim()) ? "An address cannot contain spaces."
+        error: text.trim() === "" ? strings.t("appssection.errAddressEmpty", "Give it an address.")
+          : /\s/.test(text.trim()) ? strings.t("appssection.errAddressSpaces", "An address cannot contain spaces.")
           : ""
         onAccepted: root.newSiteIcon ? createButton.clicked() : iconField.focusInput()
       }
@@ -209,9 +213,9 @@ Ui.SectionBody {
       Ui.FormField {
         id: commandField
         visible: root.creating === "tui"
-        label: "Command"
+        label: strings.t("appssection.label.3", "Command")
         placeholder: "lazydocker"
-        error: text.trim() === "" ? "Give it a command to run." : ""
+        error: text.trim() === "" ? strings.t("appssection.errCommandEmpty", "Give it a command to run.") : ""
         onAccepted: iconField.focusInput()
       }
 
@@ -222,7 +226,7 @@ Ui.SectionBody {
 
         Text {
           textFormat: Text.PlainText
-          text: "Shown as"
+          text: strings.t("appssection.text.3", "Shown as")
           color: Ui.Palette.foreground
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.bodySmall
@@ -230,8 +234,8 @@ Ui.SectionBody {
 
         ButtonGroup {
           options: [
-            { value: "float", label: "Floating" },
-            { value: "tile", label: "Tiled" }
+            { value: "float", label: strings.t("appssection.label.11", "Floating")},
+            { value: "tile", label: strings.t("appssection.label.12", "Tiled")}
           ]
           value: root.newStyle
           foreground: Ui.Palette.foreground
@@ -261,7 +265,7 @@ Ui.SectionBody {
         Text {
           textFormat: Text.PlainText
           anchors.verticalCenter: siteIconSwitch.verticalCenter
-          text: "Use the icon from the site"
+          text: strings.t("appssection.text.4", "Use the icon from the site")
           color: Ui.Palette.foreground
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.bodySmall
@@ -281,15 +285,15 @@ Ui.SectionBody {
 
         Ui.FormField {
           id: iconField
-          label: "Icon"
+          label: strings.t("appssection.label.4", "Icon")
           placeholder: "https://…/icon.png"
-          error: text.trim() === "" ? "Give it an icon." : ""
+          error: text.trim() === "" ? strings.t("appssection.errIconEmpty", "Give it an icon.") : ""
           onAccepted: createButton.clicked()
         }
 
         Text {
           textFormat: Text.PlainText
-          text: "Find icons at dashboardicons.com"
+          text: strings.t("appssection.text.5", "Find icons at dashboardicons.com")
           color: Ui.Palette.accent
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.caption
@@ -310,7 +314,9 @@ Ui.SectionBody {
 
         Button {
           id: createButton
-          text: root.creating === "webapp" ? "Create web app" : "Create TUI"
+          text: root.creating === "webapp"
+            ? strings.t("appssection.createWebApp", "Create web app")
+            : strings.t("appssection.createTui", "Create TUI")
           bordered: true
           enabled: root.newValid
           opacity: enabled ? 1 : 0.4
@@ -332,7 +338,7 @@ Ui.SectionBody {
         }
 
         Button {
-          text: "Cancel"
+          text: strings.t("appssection.text.6", "Cancel")
           foreground: Ui.Palette.foreground
           accent: Ui.Palette.accent
           fontFamily: Ui.Palette.fontFamily
@@ -350,7 +356,8 @@ Ui.SectionBody {
     id: madeGroup
     visible: root.openClass !== "" && root.openApp !== null
       && (root.openApp.kind === "web" || root.openApp.kind === "tui")
-    title: root.openApp !== null && root.openApp.kind === "web" ? "Web app" : "TUI"
+    title: root.openApp !== null && root.openApp.kind === "web"
+      ? strings.t("appssection.webApp", "Web app") : strings.t("appssection.tui", "TUI")
 
     // Read through the group's id rather than `parent`: a row's parent is the
     // group's content item, not the group.
@@ -362,9 +369,9 @@ Ui.SectionBody {
     // screen says an address has been written, and an address half typed and
     // clicked away from would be written as it stood.
     Ui.TextRow {
-      label: "Address"
+      label: strings.t("appssection.label.5", "Address")
       visible: !searchHidden && root.openApp !== null && root.openApp.kind === "web"
-      buttonText: "Save"
+      buttonText: strings.t("appssection.buttonText.1", "Save")
       value: String(madeGroup.made.url || "")
       onCommitted: function(next) {
         if (next.trim() !== "") root.app.run(["apps", "edit", root.openApp.id, "url", next.trim()])
@@ -372,9 +379,9 @@ Ui.SectionBody {
     }
 
     Ui.TextRow {
-      label: "Command"
+      label: strings.t("appssection.label.6", "Command")
       visible: !searchHidden && root.openApp !== null && root.openApp.kind === "tui"
-      buttonText: "Save"
+      buttonText: strings.t("appssection.buttonText.2", "Save")
       value: String(madeGroup.made.command || "")
       onCommitted: function(next) {
         if (next.trim() !== "") root.app.run(["apps", "edit", root.openApp.id, "command", next.trim()])
@@ -382,20 +389,20 @@ Ui.SectionBody {
     }
 
     Ui.ChoiceRow {
-      label: "Shown as"
+      label: strings.t("appssection.label.7", "Shown as")
       visible: !searchHidden && root.openApp !== null && root.openApp.kind === "tui"
       options: [
-        { value: "float", label: "Floating" },
-        { value: "tile", label: "Tiled" }
+        { value: "float", label: strings.t("appssection.label.13", "Floating")},
+        { value: "tile", label: strings.t("appssection.label.14", "Tiled")}
       ]
       value: String(madeGroup.made.style || "float")
       onPicked: function(next) { root.app.run(["apps", "edit", root.openApp.id, "style", next]) }
     }
 
     Ui.TextRow {
-      label: "Icon"
-      description: "A name, or the address of an image to fetch."
-      buttonText: "Save"
+      label: strings.t("appssection.label.8", "Icon")
+      description: strings.t("appssection.description.1", "A name, or the address of an image to fetch.")
+      buttonText: strings.t("appssection.buttonText.3", "Save")
       value: String(madeGroup.made.icon || "")
       onCommitted: function(next) {
         if (next.trim() !== "") root.app.run(["apps", "edit", root.openApp.id, "icon", next.trim()])
@@ -420,9 +427,9 @@ Ui.SectionBody {
     visible: root.openClass !== ""
 
     Ui.ActionRow {
-      label: "Open it now"
+      label: strings.t("appssection.label.9", "Open it now")
       visible: !searchHidden && root.openApp !== null && root.openApp.running !== true
-      buttonText: "Open"
+      buttonText: strings.t("appssection.buttonText.4", "Open")
       onTriggered: if (root.openApp !== null) { root.app.run(["apps", "launch", root.openApp.id]); root.app.hide() }
     }
 
@@ -430,12 +437,13 @@ Ui.SectionBody {
     // so it is pacman's own prompt in a terminal that asks — this window never
     // makes that decision on a button press.
     Ui.ActionRow {
-      label: "The application itself"
+      label: strings.t("appssection.label.10", "The application itself")
       description: root.openApp !== null && (root.openApp.kind === "web" || root.openApp.kind === "tui")
-        ? "Deletes the launcher and its icon. Nothing else is removed."
-        : "Removes the package it came from, with whatever else depends on it."
+        ? strings.t("appssection.deleteLauncherDesc", "Deletes the launcher and its icon. Nothing else is removed.")
+        : strings.t("appssection.uninstallPackageDesc", "Removes the package it came from, with whatever else depends on it.")
       buttonText: root.openApp !== null && (root.openApp.kind === "web" || root.openApp.kind === "tui")
-        ? "Delete…" : "Uninstall…"
+        ? strings.t("appssection.deleteButton", "Delete…")
+        : strings.t("appssection.uninstallButton", "Uninstall…")
       onTriggered: askUninstall(root.openApp)
     }
   }
@@ -448,7 +456,7 @@ Ui.SectionBody {
     // The header carries the application's name; a group titled with it again
     // would say it twice, a line apart.
     title: ""
-    note: "Applies to every window this application opens."
+    note: strings.t("appssection.note.1", "Applies to every window this application opens.")
   }
 
   // ---------------------------------------------------------- every app
@@ -459,18 +467,18 @@ Ui.SectionBody {
 
     Ui.DataTable {
       columns: [
-        { title: "Application", weight: 2.6 },
-        { title: "Type", weight: 0.9 },
-        { title: "Version", weight: 1 },
-        { title: "Opens on", weight: 1.2 },
-        { title: "At login", weight: 1 },
-        { title: "Default for", weight: 1.4 }
+        { title: strings.t("appssection.title.1", "Application"), weight: 2.6 },
+        { title: strings.t("appssection.title.2", "Type"), weight: 0.9 },
+        { title: strings.t("appssection.title.3", "Version"), weight: 1 },
+        { title: strings.t("appssection.title.4", "Opens on"), weight: 1.2 },
+        { title: strings.t("appssection.title.5", "At login"), weight: 1 },
+        { title: strings.t("appssection.title.6", "Default for"), weight: 1.4 }
       ]
       navigable: true
-      rowActionLabel: "Open"
+      rowActionLabel: strings.t("appssection.rowActionLabel.1", "Open")
       rowActions: [
-        { id: "open", icon: "\uf013", label: "Settings" },
-        { id: "uninstall", icon: "\uf1f8", label: "Uninstall" }
+        { id: "open", icon: "\uf013", label: strings.t("appssection.label.15", "Settings")},
+        { id: "uninstall", icon: "\uf1f8", label: strings.t("appssection.label.16", "Uninstall")}
       ]
       onRowAction: function(index, id) {
         if (index < 0 || index >= root.shown.length) return
@@ -479,7 +487,7 @@ Ui.SectionBody {
         root.openClass = String(root.shown[index].class)
       }
       currentRow: root.selectedApp
-      emptyNote: "Looking for applications…"
+      emptyNote: strings.t("appssection.emptyNote.1", "Looking for applications…")
       rows: {
         var out = []
         for (var i = 0; i < root.shown.length; i++) {
@@ -498,10 +506,11 @@ Ui.SectionBody {
             // Only for the two kinds this window can make: a packaged
             // application has nothing to say here, and "Native" on sixty rows
             // would be a column saying nothing sixty times.
-            { text: a.kind === "web" ? "Web app" : a.kind === "tui" ? "TUI" : "" },
+            { text: a.kind === "web" ? strings.t("appssection.webApp", "Web app")
+                     : a.kind === "tui" ? strings.t("appssection.tui", "TUI") : "" },
             { text: a.version !== undefined && a.version !== null ? a.version : "" },
-            { text: a.workspace !== "" ? "Workspace " + a.workspace : "" },
-            { text: a.autostart === true ? "Starts" : "" },
+            { text: a.workspace !== "" ? strings.t("appssection.workspace", "Workspace %1").arg(a.workspace) : "" },
+            { text: a.autostart === true ? strings.t("appssection.starts", "Starts") : "" },
             { text: (a.roles !== undefined ? a.roles : []).join(", ") }
           ] })
         }

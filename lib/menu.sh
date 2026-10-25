@@ -242,38 +242,81 @@ search_index() {
   while IFS=$'\t' read -r page file; do
     [[ -n $page && -f $dir/sections/$file ]] || continue
     awk -v page="$page" '
-      # A group heading gives a row context a search can match on: "blur" finds
-      # the settings under Blur even when the word is not in their own labels.
-      /^[ \t]*title: "/ {
-        # The row before this heading belongs to the group it was written in.
-        if (label != "") { print page "\t" group "\t" label "\t" desc; label = "" }
-        line = $0
-        sub(/^[ \t]*title: "/, "", line)
-        sub(/".*$/, "", line)
-        group = line
-        next
+      # A field is either a string written in the source, or a lookup the
+      # window resolves through i18n/<code>.json. A written one is indexed as
+      # is; a lookup is indexed by its key and resolved here against the same
+      # catalogs the window reads, so a search in one language finds settings
+      # worded in another. The row carries, for each field: kind (L or T),
+      # the value or the key, and the fallback the source wrote beside it.
+      function firststr(s,    a) { if (match(s, /"[^"]*"/)) a = substr(s, RSTART + 1, RLENGTH - 2); return a }
+      function secondstr(s,    b) {
+        if (match(s, /"[^"]*"/)) {
+          s = substr(s, RSTART + RLENGTH)
+          if (match(s, /"[^"]*"/)) b = substr(s, RSTART + 1, RLENGTH - 2)
+        }
+        return b
       }
-      /^[ \t]*label: "/ {
-        if (label != "") print page "\t" group "\t" label "\t" desc
-        line = $0
-        sub(/^[ \t]*label: "/, "", line)
-        sub(/".*$/, "", line)
-        label = line
-        desc = ""
-        next
+      # Sets fkind/fval/fb from a `prop: ...` line; 1 when the line is one.
+      function setfield(line, prop,    body) {
+        fkind = ""; fval = ""; fb = ""
+        if (match(line, "^[ \t]*" prop ":[ \t]+")) {
+          body = substr(line, RSTART + RLENGTH)
+          if (body ~ /^strings\.(t|tn)[ \t]*\(/) {
+            fkind = "T"; fval = firststr(body); fb = secondstr(body)
+          } else if (body ~ /^"/) {
+            fkind = "L"
+            body = substr(body, 2)
+            sub(/".*$/, "", body)
+            fval = body; fb = body
+          }
+        }
+        return fkind != ""
       }
-      /^[ \t]*description: "/ {
-        if (label == "" || desc != "") next
-        line = $0
-        sub(/^[ \t]*description: "/, "", line)
-        sub(/".*$/, "", line)
-        desc = line
+      function flush(    row) {
+        if (lval == "") return
+        row = page "\t" \
+          gkind "\t" gval "\t" gfb "\t" \
+          lkind "\t" lval "\t" lfb "\t" \
+          dkind "\t" dval "\t" dfb
+        print row
+        lkind = ""; lval = ""; lfb = ""
+        dkind = ""; dval = ""; dfb = ""
       }
-      END { if (label != "") print page "\t" group "\t" label "\t" desc }
+      {
+        if (setfield($0, "title")) {
+          # A group heading gives a row context a search can match on: "blur"
+          # finds the settings under Blur even when the word is not in their
+          # own labels. The row before the heading belongs to the group it
+          # was written in.
+          flush()
+          gkind = fkind; gval = fval; gfb = fb
+          next
+        }
+        if (setfield($0, "label")) {
+          flush()
+          lkind = fkind; lval = fval; lfb = fb
+          next
+        }
+        if (setfield($0, "description")) {
+          if (lval != "" && dval == "") { dkind = fkind; dval = fval; dfb = fb }
+          next
+        }
+      }
+      END { flush() }
     ' "$dir/sections/$file"
   done <<<"$pages" | jq -R -s -c '
-    [ split("\n")[] | select(length > 0) | split("\t")
-      | { page: .[0], group: .[1], label: .[2], description: .[3] } ]
+    def resolve(cat; kind; value; fallback):
+      if kind == "T"
+      then ( (cat[value] | if type == "object" then (.other // null) else . end)
+             // (if (fallback // "") != "" then fallback else value end) )
+      else value
+      end;
+    (env.OMACONTROL_I18N_MERGED | try fromjson catch {}) as $ocm
+    | [ split("\n")[] | select(length > 0) | split("\t")
+        | { page: .[0],
+            group:       resolve($ocm; .[1]; .[2]; .[3]),
+            label:       resolve($ocm; .[4]; .[5]; .[6]),
+            description: resolve($ocm; .[7]; .[8]; .[9]) } ]
     | group_by(.page)
     | map({ key: .[0].page, value: map({ group, label, description }) })
     | from_entries'

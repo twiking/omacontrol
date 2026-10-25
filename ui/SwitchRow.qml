@@ -1,15 +1,17 @@
 import QtQuick
+import qs.Commons
 import qs.Ui
 import "." as Local
 
 Local.SettingRow {
   id: switchRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property bool checked: false
   signal requested(bool next)
 
   // Space or Enter flips it, the way clicking it would.
   onNavActivate: switchRow.requested(!switchRow.checked)
-  navKeys: [{ key: "Space", label: "Toggle" }]
+  navKeys: [{ key: "Space", label: strings.t("switchrow.label.1", "Toggle")}]
 
   ToggleSwitch {
     anchors.right: parent.right

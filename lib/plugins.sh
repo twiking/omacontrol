@@ -331,9 +331,9 @@ plugin_add_run() {
     # is the window's own.
     id=$(sed -n 's/^Added \([^[:space:]]*\) into .*/\1/p' <<<"$out" | head -n 1)
     if [[ $enable == enable ]]; then
-      msg="Added ${id:-it} and switched it on."
+      msg=$(jq -rn --arg id "${id:-it}" "$(i18n_fill plugins.addOn 'Added %1 and switched it on.' '$id')")
     else
-      msg="Added ${id:-it}. It stays off until you switch it on."
+      msg=$(jq -rn --arg id "${id:-it}" "$(i18n_fill plugins.addOff 'Added %1. It stays off until you switch it on.' '$id')")
     fi
   else
     msg=$(printf '%s' "$out" | grep -v '^[[:space:]]*$' | tail -n 1 | head -c 400)
@@ -342,7 +342,7 @@ plugin_add_run() {
     # heading already says what could not be done. Shortest match, so it
     # stops at the first colon and leaves a path in the message alone.
     msg=${msg#omarchy-*: }
-    msg=${msg:-Could not add it.}
+    msg=${msg:-$(jq -rn "$(i18n_t plugins.addFailed 'Could not add it.')")}
   fi
 
   jq -c --argjson ok "$(( rc == 0 ? 1 : 0 ))" --arg msg "$msg" --argjson at "$(date +%s)" \
@@ -373,7 +373,8 @@ plugin_update_run() {
   # "x is up to date.", or why it refused.
   msg=$(printf '%s' "$out" | grep -v '^[[:space:]]*$' | tail -n 1 | head -c 400)
   if [[ -z $msg ]]; then
-    (( rc == 0 )) && msg="Updated." || msg="Update failed."
+    (( rc == 0 )) && msg=$(jq -rn "$(i18n_t plugins.updated 'Updated.')") \
+      || msg=$(jq -rn "$(i18n_t plugins.updateFailed 'Update failed.')")
   fi
 
   # A successful update makes the recorded count a lie; the cheapest honest

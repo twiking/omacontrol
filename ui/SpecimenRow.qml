@@ -13,6 +13,7 @@ import "." as Local
 // be walked to and chosen without the mouse.
 Item {
   id: specimen
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property string family: ""
   property bool current: false
@@ -22,7 +23,7 @@ Item {
     id: nav
     anchors.fill: parent
     searchText: specimen.family
-    navKeys: [{ key: "Space", label: "Use this font" }]
+    navKeys: [{ key: "Space", label: strings.t("specimenrow.label.1", "Use this font")}]
     onNavActivate: specimen.chose()
   }
 

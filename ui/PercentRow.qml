@@ -6,6 +6,7 @@ import "." as Local
 // A 0–1 value shown as a percentage.
 Local.SettingRow {
   id: percentRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property real value: 1
   signal committed(real next)
 
@@ -27,7 +28,7 @@ Local.SettingRow {
     if (Math.abs(value - pending) < 0.001 || Math.abs(value - basis) > 0.001) stepping = false
   }
 
-  navKeys: [{ key: "\u2190\u2192", label: "Adjust" }]
+  navKeys: [{ key: "\u2190\u2192", label: strings.t("percentrow.label.1", "Adjust")}]
 
   function commit(next) {
     var wanted = Math.max(0, Math.min(1, Math.round(next * 100) / 100))

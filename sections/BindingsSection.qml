@@ -9,6 +9,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
   // "super+shift+r", "SUPER + SHIFT + R" and "Super Shift R" are one chord;
   // the helper canonicalises the same way before it compares.
@@ -29,8 +30,8 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Add a binding"
-    note: "Keys as Hyprland spells them: SUPER, SHIFT, CTRL, ALT, and a key."
+    title: strings.t("bindingssection.title.1", "Add a binding")
+    note: strings.t("bindingssection.note.1", "Keys as Hyprland spells them: SUPER, SHIFT, CTRL, ALT, and a key.")
 
     Row {
       width: parent.width
@@ -39,7 +40,7 @@ Ui.SectionBody {
       TextField {
         id: keysField
         width: (parent.width - addBindingButton.width - Style.space(24)) * 0.3
-        placeholderText: "SUPER + SHIFT + R"
+        placeholderText: strings.t("bindingssection.placeholderText.1", "SUPER + SHIFT + R")
         foreground: page.app.foreground
         accent: page.app.accent
       }
@@ -47,7 +48,7 @@ Ui.SectionBody {
       TextField {
         id: bindingDescriptionField
         width: (parent.width - addBindingButton.width - Style.space(24)) * 0.25
-        placeholderText: "what it does"
+        placeholderText: strings.t("bindingssection.placeholderText.2", "what it does")
         foreground: page.app.foreground
         accent: page.app.accent
       }
@@ -55,14 +56,14 @@ Ui.SectionBody {
       TextField {
         id: commandField
         width: (parent.width - addBindingButton.width - Style.space(24)) * 0.45
-        placeholderText: "command to run"
+        placeholderText: strings.t("bindingssection.placeholderText.3", "command to run")
         foreground: page.app.foreground
         accent: page.app.accent
       }
 
       Button {
         id: addBindingButton
-        text: "Add"
+        text: strings.t("bindingssection.text.1", "Add")
         bordered: true
         foreground: page.app.foreground
         accent: page.app.accent
@@ -89,9 +90,11 @@ Ui.SectionBody {
       visible: clash !== null
       wrapMode: Text.WordWrap
       text: clash
-        ? page.canonicalKeys(keysField.text) + " already runs " +
-          (String(clash.description) !== "" ? String(clash.description) : "something else") +
-          ". Adding this replaces it."
+        ? page.canonicalKeys(keysField.text)
+          + strings.t("bindingssection.clashRuns", " already runs ")
+              .arg(String(clash.description) !== "" ? String(clash.description)
+                 : strings.t("bindingssection.clashOther", "something else"))
+          + strings.t("bindingssection.clashReplaces", ". Adding this replaces it.")
         : ""
       color: Ui.Palette.urgent
       font.family: Ui.Palette.fontFamily
@@ -100,7 +103,7 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Every binding"
+    title: strings.t("bindingssection.title.2", "Every binding")
 
     // This page had a search of its own before the window did. While the
     // window is searching, that one steps aside rather than filtering the
@@ -109,7 +112,7 @@ Ui.SectionBody {
     TextField {
       width: parent.width
       visible: !page.app.searching
-      placeholderText: "Search keys or actions…"
+      placeholderText: strings.t("bindingssection.placeholderText.4", "Search keys or actions…")
       text: page.app.bindingFilter
       foreground: page.app.foreground
       accent: page.app.accent
@@ -120,7 +123,8 @@ Ui.SectionBody {
       textFormat: Text.PlainText
       width: parent.width
       visible: !page.app.searching
-      text: page.app.visibleBindings.length + " of " + (page.app.bindings.items !== undefined ? page.app.bindings.items.length : 0)
+      text: page.app.visibleBindings.length + strings.t("bindingssection.of", " of ")
+        + (page.app.bindings.items !== undefined ? page.app.bindings.items.length : 0)
       color: page.app.muted
       font.family: page.app.fontFamily
       font.pixelSize: Style.font.caption

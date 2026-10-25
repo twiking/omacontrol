@@ -7,6 +7,7 @@ import "." as Local
 // type it, point at an image, or put the shipped one back.
 Local.SettingRow {
   id: brandingRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   // "text", "image" or "default" — the caller decides what each one runs.
   signal chose(string variant)
 
@@ -15,7 +16,7 @@ Local.SettingRow {
     spacing: Style.space(8)
 
     Button {
-      text: "Text…"
+      text: strings.t("brandingrow.text.1", "Text…")
       bordered: true
       foreground: Local.Palette.foreground
       accent: Local.Palette.accent
@@ -24,7 +25,7 @@ Local.SettingRow {
     }
 
     Button {
-      text: "Image…"
+      text: strings.t("brandingrow.text.2", "Image…")
       bordered: true
       foreground: Local.Palette.foreground
       accent: Local.Palette.accent
@@ -33,7 +34,7 @@ Local.SettingRow {
     }
 
     Button {
-      text: "Reset"
+      text: strings.t("brandingrow.text.3", "Reset")
       bordered: true
       foreground: Local.Palette.foreground
       accent: Local.Palette.accent

@@ -7,6 +7,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var power: app.power
@@ -17,7 +18,9 @@ Ui.SectionBody {
   // three profiles, since the bar is where most people meet them and two
   // pictures for one profile is one too many.
   function profileOptions() {
-    var labels = { "power-saver": "Power saver", "balanced": "Balanced", "performance": "Performance" }
+    var labels = { "power-saver": strings.t("powersection.profilePowerSaver", "Power saver"),
+                   "balanced": strings.t("powersection.profileBalanced", "Balanced"),
+                   "performance": strings.t("powersection.profilePerformance", "Performance") }
     var icons = { "power-saver": "\udb80\udf2a", "balanced": "\udb80\ude9a", "performance": "\udb81\udcc5" }
     var list = power.profiles !== undefined ? power.profiles : []
     var out = []
@@ -27,7 +30,8 @@ Ui.SectionBody {
     return out
   }
 
-  readonly property string sourceLabel: onBattery ? "On battery" : "Plugged in"
+  readonly property string sourceLabel: onBattery ? strings.t("powersection.onBattery", "On battery")
+                                                   : strings.t("powersection.pluggedIn", "Plugged in")
 
   // On the mains the battery's own word for itself is not a state anyone
   // recognises: a full pack on a dock reports `discharging` while it trickles
@@ -40,15 +44,16 @@ Ui.SectionBody {
   readonly property string stateLabel: {
     var state = String(reading.state || "")
     var percentage = Number(reading.percentage || 0)
-    if (state === "empty") return "Empty"
+    if (state === "empty") return strings.t("powersection.empty", "Empty")
     // The rate belongs to the word for what is happening, not to a clause of
     // its own: "Charging at 2.2 W" is one fact, where "Charging" and then
     // "2.2 W" two lines later is the reader assembling it.
     if (onBattery) return state === "discharging" || state === "pending-discharge"
-      ? "Discharging" + page.atRate() : "On battery"
-    if (state === "charging" || state === "pending-charge") return "Charging" + page.atRate()
-    if (state === "fully-charged" || percentage >= 99) return "Fully charged"
-    return "Not charging"
+      ? strings.t("powersection.discharging", "Discharging") + page.atRate()
+      : strings.t("powersection.onBattery", "On battery")
+    if (state === "charging" || state === "pending-charge") return strings.t("powersection.charging", "Charging") + page.atRate()
+    if (state === "fully-charged" || percentage >= 99) return strings.t("powersection.fullyCharged", "Fully charged")
+    return strings.t("powersection.notCharging", "Not charging")
   }
 
   function atRate() {
@@ -69,7 +74,9 @@ Ui.SectionBody {
     var parts = []
     var left = page.roundedTime(String(reading.remaining || ""))
     if (left !== "" && (onBattery || reading.state === "charging"))
-      parts.push(reading.state === "charging" ? left + " until full" : left + " left")
+      parts.push(reading.state === "charging"
+        ? strings.t("powersection.untilFull", "%1 until full").arg(left)
+        : strings.t("powersection.left", "%1 left").arg(left))
     return parts.join("  ·  ")
   }
 
@@ -108,32 +115,34 @@ Ui.SectionBody {
     // battery they are the same number, and two columns of it read as the
     // card repeating itself.
     var out = [
-      { key: "charge", label: "Charge / capacity" },
-      { key: "rated", label: "Rated capacity" },
-      { key: "health", label: "Health" },
-      { key: "cycles", label: "Charge cycles" }
+      { key: "charge", label: strings.t("powersection.label.3", "Charge / capacity")},
+      { key: "rated", label: strings.t("powersection.label.4", "Rated capacity")},
+      { key: "health", label: strings.t("powersection.label.5", "Health")},
+      { key: "cycles", label: strings.t("powersection.label.6", "Charge cycles")}
     ]
     // Only ever on a bad day: UPower answers "none" the rest of the time, and
     // a cell reading "Warning: none" trains people not to read it.
     if (String(reading.warning || "") !== "")
-      out.push({ rule: true }, { key: "warning", label: "Warning" })
+      out.push({ rule: true }, { key: "warning", label: strings.t("powersection.label.7", "Warning")})
     return out
   }
 
   readonly property var batteryValues: {
-    var levels = { "low": "Low", "critical": "Critical", "action": "About to shut down" }
+    var levels = { "low": strings.t("powersection.levelLow", "Low"),
+                   "critical": strings.t("powersection.levelCritical", "Critical"),
+                   "action": strings.t("powersection.levelAction", "About to shut down") }
     var warning = String(reading.warning || "")
     return {
       charge: reading.energy > 0 && reading.energyFull > 0
         ? Number(reading.energy).toFixed(1) + " / " + Number(reading.energyFull).toFixed(1) + " Wh"
         : "—",
       health: reading.health !== null && reading.health !== undefined
-        ? reading.health + "% of rated" : "—",
+        ? strings.t("powersection.ofRated", "%1 % of rated").arg(reading.health) : "—",
       // Manufacturers specify conservatively and the gauge recalibrates as it
       // learns the pack, so a healthy battery measures a little above this.
       rated: reading.energyDesign > 0 ? Number(reading.energyDesign).toFixed(1) + " Wh" : "—",
       cycles: reading.cycles !== null && reading.cycles !== undefined
-        ? String(reading.cycles) : "Not counted",
+        ? String(reading.cycles) : strings.t("powersection.notCounted", "Not counted"),
       warning: levels[warning] !== undefined ? levels[warning] : warning
     }
   }
@@ -241,7 +250,7 @@ Ui.SectionBody {
     Text {
       textFormat: Text.PlainText
       width: parent.width
-      text: "Capacity is what the battery holds today. Rated capacity is what the manufacturer specified, usually lower than the actual capacity."
+      text: strings.t("powersection.text.1", "Capacity is what the battery holds today. Rated capacity is what the manufacturer specified, usually lower than the actual capacity.")
       wrapMode: Text.WordWrap
       color: Ui.Palette.muted
       font.family: Ui.Palette.fontFamily
@@ -253,17 +262,17 @@ Ui.SectionBody {
   // question "what is draining it" is asked here, on the page that says how
   // long is left.
   Ui.SettingGroup {
-    title: "Profile"
+    title: strings.t("powersection.title.1", "Profile")
 
     Ui.ChoiceRow {
-      label: "On battery"
+      label: strings.t("powersection.label.1", "On battery")
       value: page.power.forBattery !== undefined ? String(page.power.forBattery) : ""
       options: page.profileOptions()
       onPicked: function(next) { page.app.run(["power", "profile", "battery", next]) }
     }
 
     Ui.ChoiceRow {
-      label: "Plugged in"
+      label: strings.t("powersection.label.2", "Plugged in")
       value: page.power.ac !== undefined ? String(page.power.ac) : ""
       options: page.profileOptions()
       onPicked: function(next) { page.app.run(["power", "profile", "ac", next]) }

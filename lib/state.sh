@@ -141,6 +141,7 @@ state_slice() {
     bluetooth) jq -cn --argjson v "$(bluetooth_state)" '{ bluetooth: $v }' ;;
     power) jq -cn --argjson v "$(power_state)" '{ power: $v }' ;;
     audio) jq -cn --argjson v "$(audio_state)" '{ audio: $v }' ;;
+    language) jq -cn --argjson v "$(state_language)" '{ language: $v }' ;;
     groups) jq -cn \
       --argjson browser "$(menu_group_state setup.default.browser)" \
       --argjson terminal "$(menu_group_state setup.default.terminal)" \
@@ -224,6 +225,7 @@ state() {
   par_run devices devices_state
   par_run power power_state
   par_run audio audio_state
+  par_run language state_language
   # The half of the search index that comes from the section sources. The
   # other half is the state itself, and is put together once it is all in.
   par_run searchsources search_index
@@ -260,6 +262,7 @@ state() {
   devices=$(par_get devices '{}')
   power=$(par_get power '{}')
   audio=$(par_get audio '{}')
+  language=$(par_get language '{}')
   local searchsources
   searchsources=$(par_get searchsources '{}')
   par_end
@@ -284,13 +287,13 @@ state() {
                     label: (.[labelKey] // "" | tostring),
                     description: (.[descKey] // "" | tostring) }
         | select(.label != "") ];
-    { audio: (entries($audio.outputs; "Output"; "description"; "name")
-              + entries($audio.inputs; "Input"; "description"; "name")),
-      bindings: entries($bindings.items; "Keybindings"; "keys"; "description"),
-      workspaces: (entries($workspaces.rules; "Applications"; "name"; "class")
-                   + entries($workspaces.setups; "Workspaces"; "label"; "name")),
-      plugins: entries($plugins; "Plugins"; "name"; "id"),
-      displays: entries($monitors; "Displays"; "label"; "name") }'''))
+    { audio: (entries($audio.outputs; '"$(i18n_t search.output 'Output')"'; "description"; "name")
+              + entries($audio.inputs; '"$(i18n_t search.input 'Input')"'; "description"; "name")),
+      bindings: entries($bindings.items; '"$(i18n_t search.keybindings 'Keybindings')"'; "keys"; "description"),
+      workspaces: (entries($workspaces.rules; '"$(i18n_t search.applications 'Applications')"'; "name"; "class")
+                   + entries($workspaces.setups; '"$(i18n_t search.workspaces 'Workspaces')"'; "label"; "name")),
+      plugins: entries($plugins; '"$(i18n_t search.plugins 'Plugins')"'; "name"; "id"),
+      displays: entries($monitors; '"$(i18n_t search.displays 'Displays')"'; "label"; "name") }'''))
 
   jq -cn \
     --argjson cfg "$cfg" \
@@ -320,6 +323,7 @@ state() {
     --argjson devices "${devices:-{\}}" \
     --argjson power "${power:-{\}}" \
     --argjson audio "${audio:-{\}}" \
+    --argjson language "${language:-{\}}" \
     --arg textScale "${textscale:-1}" \
     '{
       theme: $theme,
@@ -354,6 +358,7 @@ state() {
       devices: $devices,
       power: $power,
       audio: $audio,
+      language: $language,
       iconFonts: $iconFonts,
       branding: $branding
     }'

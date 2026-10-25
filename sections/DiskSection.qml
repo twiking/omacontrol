@@ -12,6 +12,7 @@ import "../ui" as Ui
 // for and offers the handful of things there are to *do* as actions.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var mounts: app.disk.mounts !== undefined ? app.disk.mounts : []
@@ -32,6 +33,14 @@ Ui.SectionBody {
     for (var i = 0; i < breakdown.length; i++)
       if (breakdown[i].label === "Home") return true
     return false
+  }
+
+  function breakdownLabel(label) {
+    return label === "System" ? strings.t("disksection.bkSystem", "System")
+       : label === "Packages" ? strings.t("disksection.bkPackages", "Packages")
+       : label === "Home" ? strings.t("disksection.bkHome", "Home")
+       : label === "Snapshots" ? strings.t("disksection.bkSnapshots", "Snapshots")
+       : label
   }
 
 
@@ -62,9 +71,9 @@ Ui.SectionBody {
     var names = { "nvme": "NVMe", "sata": "SATA", "usb": "USB", "ata": "ATA",
                   "sas": "SAS", "mmc": "SD / eMMC" }
     var tran = String(drive.transport || "")
-    if (tran === "") return drive.removable === true ? "Removable" : "\u2014"
+    if (tran === "") return drive.removable === true ? strings.t("disksection.removable", "Removable") : "\u2014"
     var label = names[tran] !== undefined ? names[tran] : tran.toUpperCase()
-    return drive.removable === true ? label + "  \u00b7  removable" : label
+    return drive.removable === true ? label + strings.t("disksection.removableSuffix", "  \u00b7  removable") : label
   }
 
   // What the drive is, then what it is doing, then the two figures that only
@@ -79,18 +88,18 @@ Ui.SectionBody {
   // drive can sit at 100 % while moving almost nothing, which is what
   // thousands of small files look like.
   readonly property var driveFacts: [
-    { key: "capacity", label: "Capacity" },
-    { key: "connection", label: "Connection" },
-    { key: "kind", label: "Kind" },
-    { key: "encryption", label: "Encryption" },
+    { key: "capacity", label: strings.t("disksection.label.6", "Capacity")},
+    { key: "connection", label: strings.t("disksection.label.7", "Connection")},
+    { key: "kind", label: strings.t("disksection.label.8", "Kind")},
+    { key: "encryption", label: strings.t("disksection.label.9", "Encryption")},
     { rule: true },
-    { key: "reading", label: "Reading" },
-    { key: "writing", label: "Writing" },
-    { key: "busy", label: "Busy" },
+    { key: "reading", label: strings.t("disksection.label.10", "Reading")},
+    { key: "writing", label: strings.t("disksection.label.11", "Writing")},
+    { key: "busy", label: strings.t("disksection.label.12", "Busy")},
     // One cell, beside what it is the history of. Read and written are the
     // same measurement over a longer window, and two cells on a rule of their
     // own gave a pair of background figures a third of the card.
-    { key: "totals", label: "Since start-up", small: true }
+    { key: "totals", label: strings.t("disksection.label.13", "Since start-up"), small: true }
   ]
 
   function driveValues(drive) {
@@ -98,10 +107,12 @@ Ui.SectionBody {
       capacity: drive.size !== undefined && Number(drive.size) > 0
         ? app.formatBytes(drive.size) : "—",
       connection: connectionLabel(drive),
-      kind: drive.rotational === true ? "Hard disk" : "Solid state",
+      kind: drive.rotational === true ? strings.t("disksection.hardDisk", "Hard disk")
+                              : strings.t("disksection.solidState", "Solid state"),
       // The answer people want is yes or no, so it is said that way and the
       // word "encrypted" is left to do its job.
-      encryption: drive.encrypted === true ? "Encrypted" : "Not encrypted",
+      encryption: drive.encrypted === true ? strings.t("disksection.encrypted", "Encrypted")
+                                 : strings.t("disksection.notEncrypted", "Not encrypted"),
       reading: drive.read !== null && drive.read !== undefined
         ? app.formatRate(Number(drive.read)) : "—",
       writing: drive.write !== null && drive.write !== undefined
@@ -109,8 +120,8 @@ Ui.SectionBody {
       busy: drive.busy !== null && drive.busy !== undefined
         ? Number(drive.busy) + " %" : "—",
       totals: drive.readTotal !== null && drive.readTotal !== undefined
-        ? app.formatBytes(drive.readTotal) + " read  ·  "
-          + app.formatBytes(drive.writeTotal) + " written"
+        ? strings.t("disksection.ioTotals", "%1 read  ·  %2 written")
+          .arg(app.formatBytes(drive.readTotal)).arg(app.formatBytes(drive.writeTotal))
         : "—"
     }
   }
@@ -215,7 +226,7 @@ Ui.SectionBody {
       // as the only unlabelled thing on the card made it read as a gap rather
       // than as space.
       readonly property var legend: slices.length > 0
-        ? slices.concat([{ label: "Free", bytes: space.free, free: true }]) : []
+        ? slices.concat([{ label: strings.t("disksection.label.14", "Free"), bytes: space.free, free: true }]) : []
 
       framed: true
       visible: !searchEmpty
@@ -268,8 +279,9 @@ Ui.SectionBody {
           id: badge
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
-          text: drive.system === true ? "System drive"
-              : (drive.removable === true ? "Removable" : String(drive.device))
+          text: drive.system === true ? strings.t("disksection.systemDrive", "System drive")
+              : (drive.removable === true ? strings.t("disksection.removable", "Removable")
+                                            : String(drive.device))
           accented: drive.system === true
         }
       }
@@ -291,8 +303,10 @@ Ui.SectionBody {
         Text {
           textFormat: Text.PlainText
           text: space.known
-            ? page.app.formatBytes(space.used) + " used of " + page.app.formatBytes(space.total) + " usable"
-            : "Nothing on this drive is mounted"
+            ? strings.t("disksection.usedOf", "%1 used of %2 usable")
+                .arg(page.app.formatBytes(space.used))
+                .arg(page.app.formatBytes(space.total))
+            : strings.t("disksection.notMounted", "Nothing on this drive is mounted")
           color: Ui.Palette.muted
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.caption
@@ -305,7 +319,7 @@ Ui.SectionBody {
         Text {
           textFormat: Text.PlainText
           visible: drive.system === true && page.app.diskBreakdown === null
-          text: "Working out what is using the space…"
+          text: strings.t("disksection.text.1", "Working out what is using the space…")
           color: Ui.Palette.muted
           font.family: Ui.Palette.fontFamily
           font.pixelSize: Style.font.caption
@@ -397,7 +411,7 @@ Ui.SectionBody {
 
               Text {
                 textFormat: Text.PlainText
-                text: modelData.label + " " + page.app.formatBytes(modelData.bytes)
+                text: page.breakdownLabel(modelData.label) + " " + page.app.formatBytes(modelData.bytes)
                 color: Ui.Palette.muted
                 font.family: Ui.Palette.fontFamily
                 font.pixelSize: Style.font.caption
@@ -415,7 +429,7 @@ Ui.SectionBody {
           visible: drive.system === true && page.app.diskBreakdown !== null
             && slices.length > 0 && !page.breakdownHasHome
           width: parent.width
-          text: "Your home directory took too long to measure, so its space is counted under System."
+          text: strings.t("disksection.text.2", "Your home directory took too long to measure, so its space is counted under System.")
           wrapMode: Text.WordWrap
           color: Ui.Palette.muted
           font.family: Ui.Palette.fontFamily
@@ -437,18 +451,18 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Mounts"
+    title: strings.t("disksection.title.1", "Mounts")
 
     Ui.DataTable {
       columns: [
-        { title: "Mount", weight: 2.2 },
-        { title: "Device", weight: 1.6 },
-        { title: "Size", weight: 1, align: "right" },
-        { title: "Used", weight: 1.3 },
-        { title: "Type", weight: 1 }
+        { title: strings.t("disksection.title.5", "Mount"), weight: 2.2 },
+        { title: strings.t("disksection.title.6", "Device"), weight: 1.6 },
+        { title: strings.t("disksection.title.7", "Size"), weight: 1, align: "right" },
+        { title: strings.t("disksection.title.8", "Used"), weight: 1.3 },
+        { title: strings.t("disksection.title.9", "Type"), weight: 1 }
       ]
       currentRow: page.selectedMount
-      emptyNote: "Nothing mounted that this window can see."
+      emptyNote: strings.t("disksection.emptyNote.1", "Nothing mounted that this window can see.")
       rows: {
         var out = []
         for (var i = 0; i < page.mountRows.length; i++) {
@@ -466,7 +480,8 @@ Ui.SectionBody {
               { text: "" },
               // Said in the word btrfs itself uses, because that is the word
               // anyone who goes looking for it will find.
-              { text: m.fstype === "btrfs" ? "subvolume" : "also mounted" }
+              { text: m.fstype === "btrfs" ? "subvolume"
+                                           : strings.t("disksection.alsoMounted", "also mounted") }
             ] })
             continue
           }
@@ -482,7 +497,7 @@ Ui.SectionBody {
             { text: page.app.formatBytes(m.size), align: "right" },
             mounted && pct !== null
               ? { text: pct + " %", meter: pct / 100, warn: pct >= 90 }
-              : { text: "not mounted" },
+              : { text: strings.t("disksection.text.5", "not mounted")},
             { text: m.fstype }
           ] })
         }
@@ -511,7 +526,7 @@ Ui.SectionBody {
         // worse than no button.
         visible: picked !== null && !picked.child
           && (String(picked.mount || "") === "" || page.canUnmount(picked.source))
-        text: picked !== null && String(picked.mount || "") !== "" ? "Unmount" : "Mount"
+        text: picked !== null && String(picked.mount || "") !== "" ? strings.t("disksection.unmount", "Unmount") : strings.t("disksection.mount", "Mount")
         onClicked: {
           if (picked === null) return
           page.app.run(["disk", String(picked.mount || "") !== "" ? "unmount" : "mount",
@@ -523,7 +538,7 @@ Ui.SectionBody {
         readonly property var picked: page.selectedMount >= 0 && page.selectedMount < page.mountRows.length
           ? page.mountRows[page.selectedMount] : null
         visible: picked !== null && String(picked.mount || "") !== ""
-        text: "Open in files"
+        text: strings.t("disksection.text.3", "Open in files")
         onClicked: if (picked !== null) page.app.run(["disk", "open", picked.mount])
       }
     }
@@ -534,16 +549,16 @@ Ui.SectionBody {
   // of this page. On a machine using zram it is compressed memory and takes
   // no disk at all, which is the distinction the Kind column is there to make.
   Ui.SettingGroup {
-    title: "Swap"
+    title: strings.t("disksection.title.2", "Swap")
     visible: !searchEmpty && page.swap.length > 0
-    note: "Space the system uses when memory runs short."
+    note: strings.t("disksection.note.1", "Space the system uses when memory runs short.")
 
     Ui.DataTable {
       columns: [
-        { title: "Where", weight: 2.4 },
-        { title: "Kind", weight: 1.8 },
-        { title: "Size", weight: 1, align: "right" },
-        { title: "Used", weight: 1.3 }
+        { title: strings.t("disksection.title.10", "Where"), weight: 2.4 },
+        { title: strings.t("disksection.title.11", "Kind"), weight: 1.8 },
+        { title: strings.t("disksection.title.12", "Size"), weight: 1, align: "right" },
+        { title: strings.t("disksection.title.13", "Used"), weight: 1.3 }
       ]
       rows: {
         var out = []
@@ -552,8 +567,10 @@ Ui.SectionBody {
           var pct = Number(s.size) > 0 ? Number(s.used) / Number(s.size) * 100 : 0
           out.push({ cells: [
             { text: String(s.name || ""), strong: true },
-            { text: s.zram === true ? "Compressed memory"
-                                    : (s.kind === "file" ? "File on the drive" : "Partition") },
+            { text: s.zram === true ? strings.t("disksection.compressedMemory", "Compressed memory")
+                                    : (s.kind === "file"
+                                       ? strings.t("disksection.fileOnDrive", "File on the drive")
+                                       : strings.t("disksection.partition", "Partition")) },
             { text: page.app.formatBytes(s.size), align: "right" },
             { text: Math.round(pct) + " %", meter: pct / 100, warn: pct >= 90 }
           ] })
@@ -567,51 +584,51 @@ Ui.SectionBody {
   // is what a machine where smartctl needs a password gives you — teaches the
   // reader to stop looking at it.
   Ui.SettingGroup {
-    title: "Health"
+    title: strings.t("disksection.title.3", "Health")
     visible: !searchEmpty && page.health.passed !== undefined && page.health.passed !== null
 
     Ui.ReadingRow {
-      label: "SMART"
-      value: page.health.passed === true ? "Passed" : "Failing"
+      label: strings.t("disksection.label.1", "SMART")
+      value: page.health.passed === true ? strings.t("disksection.smartPassed", "Passed") : strings.t("disksection.smartFailing", "Failing")
     }
 
     Ui.ReadingRow {
       visible: page.health.temperature !== undefined && page.health.temperature !== null
-      label: "Temperature"
+      label: strings.t("disksection.label.2", "Temperature")
       value: page.health.temperature + " °C"
     }
 
     Ui.ReadingRow {
       visible: page.health.wear !== undefined && page.health.wear !== null
-      label: "Wear"
-      description: "How much of the drive's rated write life is used up."
+      label: strings.t("disksection.label.3", "Wear")
+      description: strings.t("disksection.description.1", "How much of the drive's rated write life is used up.")
       value: page.health.wear + " %"
     }
 
     Ui.ReadingRow {
       visible: page.health.hours !== undefined && page.health.hours !== null
-      label: "Powered on"
+      label: strings.t("disksection.label.4", "Powered on")
       value: page.app.formatDuration(Number(page.health.hours) * 3600)
     }
 
     Ui.ReadingRow {
       visible: page.health.written !== undefined && page.health.written !== null
-      label: "Written"
+      label: strings.t("disksection.label.5", "Written")
       value: page.app.formatBytes(page.health.written)
     }
   }
 
   Ui.SettingGroup {
-    title: "Snapshots"
+    title: strings.t("disksection.title.4", "Snapshots")
     visible: !searchEmpty && page.snapshots.length > 0
-    note: "Taken by snapper, and by Omarchy before it updates packages."
+    note: strings.t("disksection.note.2", "Taken by snapper, and by Omarchy before it updates packages.")
 
     Ui.DataTable {
       columns: [
-        { title: "No.", weight: 0.6 },
-        { title: "Kind", weight: 1 },
-        { title: "Description", weight: 2.6 },
-        { title: "Taken", weight: 1.4, align: "right" }
+        { title: strings.t("disksection.title.14", "No."), weight: 0.6 },
+        { title: strings.t("disksection.title.15", "Kind"), weight: 1 },
+        { title: strings.t("disksection.title.16", "Description"), weight: 2.6 },
+        { title: strings.t("disksection.title.17", "Taken"), weight: 1.4, align: "right" }
       ]
       rows: {
         var out = []
@@ -627,7 +644,7 @@ Ui.SectionBody {
     }
 
     Ui.Chip {
-      text: "Snapshot now"
+      text: strings.t("disksection.text.4", "Snapshot now")
       onClicked: page.app.run(["disk", "snapshot"])
     }
   }

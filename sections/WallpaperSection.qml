@@ -7,6 +7,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   Component.onCompleted: app.readWallpapers()
@@ -17,7 +18,7 @@ Ui.SectionBody {
     // "next background" walks, in its order.
     title: ""
     note: page.app.wallpaperList.length === 0
-      ? "This theme ships no backgrounds." : ""
+      ? strings.t("wallpapersection.noBackgrounds", "This theme ships no backgrounds.") : ""
 
     Ui.PictureGrid {
       items: page.wallpaperTiles

@@ -88,16 +88,13 @@ QtObject {
   }
 
   // ---------------- shape ---------------------------------------------------
-  // Hyprland's rounding drives the window; inside it, cards and pills need a
-  // radius even when the user runs square corners, or the design's cards
-  // collapse into ruled lines. A floor, not a fixed value: a rounded theme
-  // still rounds these more.
-  readonly property int cardRadius: Math.max(Style.space(8), Style.cornerRadius)
-  readonly property int chipRadius: Math.max(Style.space(6), Style.cornerRadius)
-  readonly property int iconRadius: Math.max(Style.space(6), Style.cornerRadius)
-  // A pill is round whatever the theme says: it is the shape that means
-  // "this is a value you can change", and a square one means nothing.
-  readonly property int pillRadius: Style.space(999)
+  // Every surface follows the theme's rounding, the way Omarchy's own kit
+  // does: square on a square theme, round on a round one. Nothing here
+  // floors the value a shape needs rounded, despite what it stands for.
+  readonly property int cardRadius: Style.cornerRadius
+  readonly property int chipRadius: Style.cornerRadius
+  readonly property int iconRadius: Style.cornerRadius
+  readonly property int pillRadius: Style.cornerRadius
 
   // ---------------- slice colours -------------------------------------------
   // One bar cut into what is holding a disk, and the key under it.

@@ -154,7 +154,7 @@ bindings_state() {
                 + [$disabled[]
                     | (. | canonical) as $key
                     | select(($mine[$key] | not) and ($liveKeys | index($key) | not))
-                    | { keys: ., canonical: $key, description: "Turned off",
+                    | { keys: ., canonical: $key, description: '"$(i18n_t bindings.disabled 'Turned off')"',
                         command: "", source: "disabled" }]
                 # A binding added here shows up even before Hyprland has
                 # reloaded, so adding one never looks like it did nothing.

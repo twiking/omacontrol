@@ -1,16 +1,18 @@
 import QtQuick
+import qs.Commons
 import "../ui" as Ui
 
 // Injected by the window when the page is loaded: the state every
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
   Ui.SettingGroup {
-    title: "The gutter"
+    title: strings.t("nvimsection.title.1", "The gutter")
 
     Ui.SwitchRow {
-      label: "Line numbers"
+      label: strings.t("nvimsection.label.1", "Line numbers")
       checked: page.app.nvimValue("number", true) === true
       onRequested: function(next) { page.app.setNvim("number", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:number")
@@ -18,7 +20,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Relative line numbers"
+      label: strings.t("nvimsection.label.2", "Relative line numbers")
       checked: page.app.nvimValue("relativenumber", true) === true
       onRequested: function(next) { page.app.setNvim("relativenumber", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:relativenumber")
@@ -26,13 +28,13 @@ Ui.SectionBody {
     }
 
     Ui.PickerRow {
-      label: "Sign column"
-      description: "Where git marks and diagnostics appear."
+      label: strings.t("nvimsection.label.3", "Sign column")
+      description: strings.t("nvimsection.description.1", "Where git marks and diagnostics appear.")
       value: String(page.app.nvimValue("signcolumn", "yes"))
       options: [
-        { value: "yes", label: "Always" },
-        { value: "auto", label: "Only when needed" },
-        { value: "no", label: "Never" }
+        { value: "yes", label: strings.t("nvimsection.label.13", "Always")},
+        { value: "auto", label: strings.t("nvimsection.label.14", "Only when needed")},
+        { value: "no", label: strings.t("nvimsection.label.15", "Never")}
       ]
       onPicked: function(next) { page.app.setNvim("signcolumn", next) }
       changed: page.app.isChanged("nvim:signcolumn")
@@ -41,10 +43,10 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "The text"
+    title: strings.t("nvimsection.title.2", "The text")
 
     Ui.SwitchRow {
-      label: "Wrap long lines"
+      label: strings.t("nvimsection.label.4", "Wrap long lines")
       checked: page.app.nvimValue("wrap", false) === true
       onRequested: function(next) { page.app.setNvim("wrap", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:wrap")
@@ -52,7 +54,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Highlight the current line"
+      label: strings.t("nvimsection.label.5", "Highlight the current line")
       checked: page.app.nvimValue("cursorline", true) === true
       onRequested: function(next) { page.app.setNvim("cursorline", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:cursorline")
@@ -60,8 +62,8 @@ Ui.SectionBody {
     }
 
     Ui.TextRow {
-      label: "Column guide"
-      description: "A column number, or empty for none."
+      label: strings.t("nvimsection.label.6", "Column guide")
+      description: strings.t("nvimsection.description.2", "A column number, or empty for none.")
       placeholder: "100"
       value: String(page.app.nvimValue("colorcolumn", ""))
       onCommitted: function(next) { page.app.setNvim("colorcolumn", next) }
@@ -70,7 +72,7 @@ Ui.SectionBody {
     }
 
     Ui.NumberRow {
-      label: "Keep visible above and below"
+      label: strings.t("nvimsection.label.7", "Keep visible above and below")
       suffix: "lines"
       value: Number(page.app.nvimValue("scrolloff", 4))
       from: 0
@@ -81,7 +83,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Spell checking"
+      label: strings.t("nvimsection.label.8", "Spell checking")
       checked: page.app.nvimValue("spell", false) === true
       onRequested: function(next) { page.app.setNvim("spell", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:spell")
@@ -90,10 +92,10 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Indentation"
+    title: strings.t("nvimsection.title.3", "Indentation")
 
     Ui.SwitchRow {
-      label: "Spaces instead of tabs"
+      label: strings.t("nvimsection.label.9", "Spaces instead of tabs")
       checked: page.app.nvimValue("expandtab", true) === true
       onRequested: function(next) { page.app.setNvim("expandtab", next ? "true" : "false") }
       changed: page.app.isChanged("nvim:expandtab")
@@ -101,7 +103,7 @@ Ui.SectionBody {
     }
 
     Ui.NumberRow {
-      label: "Indent width"
+      label: strings.t("nvimsection.label.10", "Indent width")
       suffix: "spaces"
       value: Number(page.app.nvimValue("shiftwidth", 2))
       from: 1
@@ -112,7 +114,7 @@ Ui.SectionBody {
     }
 
     Ui.NumberRow {
-      label: "Tab width"
+      label: strings.t("nvimsection.label.11", "Tab width")
       suffix: "spaces"
       value: Number(page.app.nvimValue("tabstop", 2))
       from: 1
@@ -124,13 +126,13 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Beyond these settings"
-    note: "Changes here apply the next time Neovim starts."
+    title: strings.t("nvimsection.title.4", "Beyond these settings")
+    note: strings.t("nvimsection.note.1", "Changes here apply the next time Neovim starts.")
 
     Ui.ActionRow {
-      label: "The rest of the config"
-      description: "Open options.lua for anything this page does not cover."
-      buttonText: "Edit…"
+      label: strings.t("nvimsection.label.12", "The rest of the config")
+      description: strings.t("nvimsection.description.3", "Open options.lua for anything this page does not cover.")
+      buttonText: strings.t("nvimsection.buttonText.1", "Edit…")
       onTriggered: page.app.editConfig("$HOME/.config/nvim/lua/config/options.lua")
     }
   }

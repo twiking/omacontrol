@@ -14,6 +14,7 @@ import "../ui" as Ui
 // worse than no opinion.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var limits: app.usage.limits !== undefined ? app.usage.limits : []
@@ -38,9 +39,9 @@ Ui.SectionBody {
     var at = Date.parse(iso)
     if (isNaN(at)) return ""
     var minutes = Math.round((at - Date.now()) / 60000)
-    if (minutes <= 0) return "now"
-    if (minutes < 90) return "in " + minutes + " min"
-    if (minutes < 1440) return "in " + Math.round(minutes / 60) + " h"
+    if (minutes <= 0) return strings.t("usagesection.resetNow", "now")
+    if (minutes < 90) return strings.t("usagesection.resetInMinutes", "in %1 min").arg(minutes)
+    if (minutes < 1440) return strings.t("usagesection.resetInHours", "in %1 h").arg(Math.round(minutes / 60))
     return Qt.formatDateTime(new Date(at), "ddd HH:mm")
   }
 
@@ -53,7 +54,7 @@ Ui.SectionBody {
 
   property Component headerControl: Component {
     Ui.Chip {
-      text: "Refresh"
+      text: strings.t("usagesection.text.1", "Refresh")
       onClicked: page.app.run(["usage", "refresh"])
     }
   }
@@ -72,8 +73,8 @@ Ui.SectionBody {
     visible: !searchEmpty && page.app.usage.provider !== undefined && page.app.usage.provider === ""
 
     Ui.ReadingRow {
-      label: "No agent usage to report"
-      description: "Nothing on this machine collects it. Omarchy ships collectors for Claude Code, Codex and Fireworks."
+      label: strings.t("usagesection.label.1", "No agent usage to report")
+      description: strings.t("usagesection.description.1", "Nothing on this machine collects it. Omarchy ships collectors for Claude Code, Codex and Fireworks.")
     }
   }
 
@@ -84,16 +85,17 @@ Ui.SectionBody {
   // the only way to do that in a SettingRow was a hardcoded margin that any
   // change to the text would break. The table already lines up columns.
   Ui.SettingGroup {
-    title: "Limits"
+    title: strings.t("usagesection.title.1", "Limits")
     note: page.app.usage.updatedAt !== undefined && page.app.usage.updatedAt !== ""
-      ? "The provider's own figures, read " + page.app.usage.updatedAt.slice(11, 16) + "." : ""
+      ? strings.t("usagesection.limitsRead", "The provider's own figures, read %1.")
+      .arg(page.app.usage.updatedAt.slice(11, 16)) : ""
     visible: !searchEmpty && page.limits.length > 0
 
     Ui.DataTable {
       columns: [
-        { title: "Limit", weight: 2 },
-        { title: "Used", weight: 2 },
-        { title: "Resets", weight: 1.4, align: "right" }
+        { title: strings.t("usagesection.title.4", "Limit"), weight: 2 },
+        { title: strings.t("usagesection.title.5", "Used"), weight: 2 },
+        { title: strings.t("usagesection.title.6", "Resets"), weight: 1.4, align: "right" }
       ]
       rows: {
         var out = []
@@ -114,9 +116,11 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Last 7 days"
+    title: strings.t("usagesection.title.2", "Last 7 days")
     note: page.app.usage.prompts !== null && page.app.usage.prompts !== undefined
-      ? page.app.usage.prompts + " prompts all told · " + page.app.formatTokens(page.app.usage.tokens) + " tokens"
+      ? strings.t("usagesection.promptsAllTold", "%1 prompts all told ·")
+      .arg(page.app.usage.prompts) + strings.t("usagesection.tokensWord", "%1 tokens")
+      .arg(page.app.formatTokens(page.app.usage.tokens))
       : ""
     visible: !searchEmpty && page.days.length > 0
 
@@ -190,14 +194,14 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "By model"
+    title: strings.t("usagesection.title.3", "By model")
     visible: !searchEmpty && page.models.length > 0
 
     Ui.DataTable {
       columns: [
-        { title: "Model", weight: 2.4 },
-        { title: "Tokens", weight: 1.2, align: "right" },
-        { title: "Share", weight: 1.4 }
+        { title: strings.t("usagesection.title.7", "Model"), weight: 2.4 },
+        { title: strings.t("usagesection.title.8", "Tokens"), weight: 1.2, align: "right" },
+        { title: strings.t("usagesection.title.9", "Share"), weight: 1.4 }
       ]
       rows: {
         var out = []

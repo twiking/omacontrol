@@ -6,6 +6,7 @@ import "." as Local
 // A whole number on a slider, written only when the drag ends.
 Local.SettingRow {
   id: numberRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property int value: 0
   property int from: 0
   property int to: 100
@@ -31,7 +32,7 @@ Local.SettingRow {
     if (value === pending || value !== basis) stepping = false
   }
 
-  navKeys: [{ key: "\u2190\u2192", label: "Adjust" }]
+  navKeys: [{ key: "\u2190\u2192", label: strings.t("numberrow.label.1", "Adjust")}]
 
   function commit(next) {
     var wanted = Math.max(numberRow.from, Math.min(numberRow.to, Math.round(next)))

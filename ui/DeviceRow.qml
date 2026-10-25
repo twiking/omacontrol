@@ -7,6 +7,7 @@ import "." as Local
 // adapter merely saw can only be paired.
 Item {
   id: deviceRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property string address: ""
   property string name: ""
@@ -28,9 +29,9 @@ Item {
     id: nav
     anchors.fill: parent
     searchText: deviceRow.title + " " + deviceRow.address + " " + deviceRow.kind
-    navKeys: deviceRow.connected ? [{ key: "Space", label: "Disconnect" }]
-      : (deviceRow.paired ? [{ key: "Space", label: "Connect" }]
-                          : [{ key: "Space", label: "Pair" }])
+    navKeys: deviceRow.connected ? [{ key: "Space", label: strings.t("devicerow.label.1", "Disconnect")}]
+      : (deviceRow.paired ? [{ key: "Space", label: strings.t("devicerow.label.2", "Connect")}]
+                          : [{ key: "Space", label: strings.t("devicerow.label.3", "Pair")}])
     onNavActivate: {
       if (deviceRow.connected) deviceRow.disconnectRequested()
       else if (deviceRow.paired) deviceRow.connectRequested()

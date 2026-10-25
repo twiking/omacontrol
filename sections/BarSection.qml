@@ -9,6 +9,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var layout: (app.barState.layout !== undefined ? app.barState.layout : ({}))
@@ -48,10 +49,10 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Placement"
+    title: strings.t("barsection.title.1", "Placement")
 
     Ui.PickerRow {
-      label: "Position"
+      label: strings.t("barsection.label.1", "Position")
       value: page.app.barState.position !== undefined ? String(page.app.barState.position) : "top"
       options: ["top", "bottom", "left", "right"]
       onPicked: function(next) { page.app.set("bar-position", next) }
@@ -60,8 +61,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Transparent"
-      description: "Drops the bar's own background so the wallpaper shows through."
+      label: strings.t("barsection.label.2", "Transparent")
+      description: strings.t("barsection.description.1", "Drops the bar's own background so the wallpaper shows through.")
       checked: page.app.barState.transparent === true
       onRequested: function(next) { page.app.set("bar-transparent", next ? "true" : "false") }
       changed: page.app.isChanged("bar-transparent")
@@ -69,8 +70,8 @@ Ui.SectionBody {
     }
 
     Ui.PickerRow {
-      label: "Centered widget"
-      description: "The widget the centre section is anchored on."
+      label: strings.t("barsection.label.3", "Centered widget")
+      description: strings.t("barsection.description.2", "The widget the centre section is anchored on.")
       value: page.app.barState.centerAnchor !== undefined ? String(page.app.barState.centerAnchor) : ""
       options: page.app.barWidgetIds()
       searchable: true
@@ -113,9 +114,9 @@ Ui.SectionBody {
   // which place in it.
   Repeater {
     model: [
-      { key: "left", title: "Left" },
-      { key: "center", title: "Center" },
-      { key: "right", title: "Right" }
+      { key: "left", title: strings.t("barsection.title.3", "Left")},
+      { key: "center", title: strings.t("barsection.title.4", "Center")},
+      { key: "right", title: strings.t("barsection.title.5", "Right")}
     ]
 
     delegate: Ui.SettingGroup {
@@ -124,7 +125,7 @@ Ui.SectionBody {
       readonly property string sectionKey: modelData.key
       width: parent.width
       title: modelData.title
-      note: page.widgets(modelData.key).length === 0 ? "Nothing here yet." : ""
+      note: page.widgets(modelData.key).length === 0 ? strings.t("barsection.groupEmpty", "Nothing here yet.") : ""
 
       Repeater {
         model: page.widgets(sectionGroup.modelData.key)
@@ -154,7 +155,7 @@ Ui.SectionBody {
           }
 
           width: parent.width
-          label: isSpacer ? "Spacer" : page.widgetName(modelData)
+          label: isSpacer ? strings.t("barsection.spacer", "Spacer") : page.widgetName(modelData)
           // The width was the description while there was nowhere else to
           // say it. The slider reads it out now, so the row says what every
           // other row in the list says: which widget this is.
@@ -162,7 +163,7 @@ Ui.SectionBody {
 
           // The width is the only thing a spacer has, so the cursor edits it
           // directly rather than making the reader reach for the buttons.
-          navKeys: isSpacer ? [{ key: "←→", label: "Width" }] : []
+          navKeys: isSpacer ? [{ key: "←→", label: strings.t("barsection.label.5", "Width")}] : []
           onNavStep: function(delta) {
             if (widgetRow.isSpacer) widgetRow.setSize(widgetRow.effective + delta * 4)
           }
@@ -175,7 +176,9 @@ Ui.SectionBody {
           })
 
           function sectionTitle(key) {
-            return key === "left" ? "Left" : key === "center" ? "Center" : "Right"
+            return key === "left" ? strings.t("barsection.left", "Left")
+                 : key === "center" ? strings.t("barsection.center", "Center")
+                 : strings.t("barsection.right", "Right")
           }
 
           // Everything you can do to a row sits in front of its name, in the
@@ -220,7 +223,7 @@ Ui.SectionBody {
             Button {
               anchors.verticalCenter: parent.verticalCenter
               visible: !widgetRow.choosing
-              text: "Move"
+              text: strings.t("barsection.text.1", "Move")
               bordered: true
               foreground: Ui.Palette.foreground
               accent: Ui.Palette.accent
@@ -278,7 +281,7 @@ Ui.SectionBody {
             Button {
               anchors.verticalCenter: parent.verticalCenter
               visible: widgetRow.isSpacer && !widgetRow.choosing
-              text: "Remove"
+              text: strings.t("barsection.text.2", "Remove")
               bordered: true
               foreground: Ui.Palette.foreground
               accent: Ui.Palette.accent
@@ -290,7 +293,7 @@ Ui.SectionBody {
             Button {
               anchors.verticalCenter: parent.verticalCenter
               visible: !widgetRow.isSpacer && !widgetRow.choosing
-              text: "Disable"
+              text: strings.t("barsection.text.3", "Disable")
               bordered: true
               foreground: Ui.Palette.foreground
               accent: Ui.Palette.accent
@@ -349,13 +352,13 @@ Ui.SectionBody {
     Ui.SettingRow {
       id: addSpacer
       width: parent.width
-      label: "Add spacer"
-      description: "Blank space, as wide as you set it. Add as many as you like."
+      label: strings.t("barsection.label.4", "Add spacer")
+      description: strings.t("barsection.description.3", "Blank space, as wide as you set it. Add as many as you like.")
       // The same column as the rows above, so this name lines up with theirs.
       leadingWidth: page.controlsWidth
 
       property bool choosing: false
-      navKeys: [{ key: "↵", label: "Add" }]
+      navKeys: [{ key: "↵", label: strings.t("barsection.label.6", "Add")}]
       onNavActivate: addSpacer.choosing = true
 
       // Everything you can do sits in front of the name here too, so this row
@@ -366,7 +369,7 @@ Ui.SectionBody {
         Button {
           anchors.verticalCenter: parent.verticalCenter
           visible: !addSpacer.choosing
-          text: "Add"
+          text: strings.t("barsection.text.4", "Add")
           bordered: true
           foreground: Ui.Palette.foreground
           accent: Ui.Palette.accent
@@ -380,7 +383,9 @@ Ui.SectionBody {
           delegate: Button {
             required property var modelData
             anchors.verticalCenter: parent.verticalCenter
-            text: modelData === "left" ? "Left" : modelData === "center" ? "Center" : "Right"
+            text: modelData === "left" ? strings.t("barsection.left", "Left")
+                 : modelData === "center" ? strings.t("barsection.center", "Center")
+                 : strings.t("barsection.right", "Right")
             bordered: true
             foreground: Ui.Palette.foreground
             accent: Ui.Palette.accent
@@ -414,10 +419,11 @@ Ui.SectionBody {
   // and does not.
   Ui.SettingGroup {
     rowSpacing: Style.space(2)
-    title: "Disabled"
+    title: strings.t("barsection.title.2", "Disabled")
     note: page.offWidgets.length === 0
-      ? "Every widget you have is in the bar."
-      : "These keep their settings and their old place until they are enabled again."
+      ? strings.t("barsection.allInBar", "Every widget you have is in the bar.")
+      : strings.t("barsection.disabledKeep",
+          "These keep their settings and their old place until they are enabled again.")
 
     Repeater {
       model: page.offWidgets
@@ -425,7 +431,7 @@ Ui.SectionBody {
       delegate: Ui.WidgetRow {
         required property var modelData
         width: parent.width
-        buttonText: "Enable"
+        buttonText: strings.t("barsection.buttonText.1", "Enable")
         label: String(modelData.name)
         detail: String(modelData.id)
         onTriggered: page.app.run(["bar", "enable", String(modelData.id)])

@@ -8,6 +8,7 @@ import "." as Local
 // per row would be one button per row doing what the row already does.
 Local.NavRow {
   id: linkRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property string value: ""
   // Unread rows carry a star. It is both the mark and the way to clear it:
   // there is nothing else a reader would want to do to a star, so making it
@@ -20,8 +21,8 @@ Local.NavRow {
   // legend offering "Space — Mark read" would open the article instead. The
   // step keys are the ones a row can tell apart.
   navKeys: linkRow.unread
-    ? [{ key: "↵", label: "Open" }, { key: "→", label: "Mark read" }]
-    : [{ key: "↵", label: "Open" }]
+    ? [{ key: "↵", label: strings.t("linkrow.label.1", "Open")}, { key: "→", label: strings.t("linkrow.label.2", "Mark read")}]
+    : [{ key: "↵", label: strings.t("linkrow.label.3", "Open")}]
   onNavActivate: linkRow.triggered()
   onNavStep: function(delta) { if (delta > 0 && linkRow.unread) linkRow.starred() }
 

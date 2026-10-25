@@ -6,6 +6,7 @@ import "." as Local
 // A duration stored in seconds but edited in whole minutes.
 Local.SettingRow {
   id: minutesRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property int seconds: 0
   signal committed(int mins)
 
@@ -29,7 +30,7 @@ Local.SettingRow {
     if (currentMinutes === pending || currentMinutes !== basis) stepping = false
   }
 
-  navKeys: [{ key: "\u2190\u2192", label: "Adjust" }]
+  navKeys: [{ key: "\u2190\u2192", label: strings.t("minutesrow.label.1", "Adjust")}]
 
   function commit(next) {
     var wanted = Math.max(1, Math.min(60, Math.round(next)))
@@ -66,7 +67,7 @@ Local.SettingRow {
       anchors.verticalCenter: parent.verticalCenter
       width: Style.space(76)
       horizontalAlignment: Text.AlignRight
-      text: minutesRow.shownMinutes + (minutesRow.shownMinutes === 1 ? " min" : " mins")
+      text: minutesRow.shownMinutes + strings.tn("minutesrow.minutes", minutesRow.shownMinutes, " min").arg(minutesRow.shownMinutes)
       color: Local.Palette.muted
       font.family: Local.Palette.fontFamily
       font.pixelSize: Style.font.caption

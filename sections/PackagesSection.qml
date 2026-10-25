@@ -19,6 +19,7 @@ import "../ui" as Ui
 // confirmation and somewhere for the output to go.
 Ui.SectionBody {
   id: root
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var pending: app.packages.pending !== undefined ? app.packages.pending : []
@@ -60,7 +61,9 @@ Ui.SectionBody {
   property Component headerControl: Component {
     Ui.Chip {
       visible: root.openPackage === ""
-      text: root.app.packagesSyncing ? "Checking…" : "Check for updates"
+      text: root.app.packagesSyncing
+        ? strings.t("shared.checking", "Checking…")
+        : strings.t("shared.checkUpdates", "Check for updates")
       onClicked: root.app.refreshPackages()
     }
   }
@@ -157,8 +160,8 @@ Ui.SectionBody {
   // Updates is offered when there is an update, and a place when something
   // came from there.
   readonly property var filterChips: {
-    var out = [{ id: "all", title: "All" }]
-    if (pending.length > 0) out.push({ id: "updates", title: "Updates" })
+    var out = [{ id: "all", title: strings.t("packagessection.title.3", "All")}]
+    if (pending.length > 0) out.push({ id: "updates", title: strings.t("packagessection.title.4", "Updates")})
     for (var i = 0; i < origins.length; i++)
       out.push({ id: origins[i], title: origins[i] })
     return out
@@ -261,9 +264,9 @@ Ui.SectionBody {
   readonly property string neededBy: {
     var by = info.requiredBy !== undefined ? info.requiredBy : []
     if (openPackage === "" || info.name === undefined) return "—"
-    if (by.length === 0) return "Nothing — it can be removed on its own"
+    if (by.length === 0) return strings.t("packagessection.removable", "Nothing — it can be removed on its own")
     if (by.length <= 4) return by.join(", ")
-    return by.length + " other packages"
+    return strings.t("packagessection.otherPackages", "%1 other packages").arg(by.length)
   }
 
   // Where a package came from, in the three names that mean something to
@@ -287,14 +290,15 @@ Ui.SectionBody {
   // the only way that happens.
   readonly property string openOrigin: {
     if (info.name === undefined) return "—"
-    if (info.foreign === true) return "The AUR, or by hand"
+    if (info.foreign === true) return strings.t("packagessection.originAurOrHand", "The AUR, or by hand")
     var named = originOf(info)
-    return named !== "" ? named : "A repository"
+    return named !== "" ? named : strings.t("packagessection.originRepository", "A repository")
   }
 
   function askRemove(name) {
     if (String(name) === "") return
-    app.askConfirm("Remove " + name + "?", "Remove", function() {
+    app.askConfirm(strings.t("packagessection.removeConfirm", "Remove %1?").arg(name),
+                   strings.t("packagessection.remove", "Remove"), function() {
       app.run(["packages", "remove", String(name)])
       app.hide()
     })
@@ -332,44 +336,47 @@ Ui.SectionBody {
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "Waiting"
-        value: root.checkedAt === 0 ? "—" : (root.pending.length === 0 ? "None" : String(root.pending.length))
+        label: strings.t("packagessection.label.1", "Waiting")
+        value: root.checkedAt === 0 ? "—" : (root.pending.length === 0 ? strings.t("packagessection.none", "None") : String(root.pending.length))
         // Only the repositories publish a download size — an AUR package is
         // built rather than fetched — so the figure says what it leaves out
         // rather than presenting a partial sum as a total.
         note: root.pendingBytes > 0
-          ? root.app.formatBytes(root.pendingBytes) + " to download"
-            + (root.aurWaiting ? ", plus what is built" : "")
-          : (root.checkedAt === 0 ? "Not checked yet" : "")
+          ? strings.t("packagessection.toDownload", "%1 to download")
+              .arg(root.app.formatBytes(root.pendingBytes))
+            + (root.aurWaiting ? strings.t("packagessection.plusBuilt", ", plus what is built") : "")
+          : (root.checkedAt === 0 ? strings.t("shared.notChecked", "Not checked yet") : "")
       }
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "Last updated"
+        label: strings.t("packagessection.label.2", "Last updated")
         value: root.updatedAt > 0 ? root.app.formatWhen(root.updatedAt) : "—"
-        note: root.updatedAt > 0 ? "When a package was last replaced" : ""
+        note: root.updatedAt > 0 ? strings.t("packagessection.lastReplaced", "When a package was last replaced") : ""
       }
 
       Ui.StatCard {
         Layout.fillWidth: true
-        label: "On disk"
+        label: strings.t("packagessection.label.3", "On disk")
         value: root.app.packages.diskBytes > 0 ? root.app.formatBytes(root.app.packages.diskBytes) : "—"
         note: root.app.packages.installed !== undefined
-          ? "across " + root.app.packages.installed + " packages" : ""
+          ? strings.t("packagessection.acrossPackages", "across %1 packages").arg(root.app.packages.installed) : ""
       }
     }
   }
 
   Ui.SettingGroup {
     visible: !searchEmpty && root.openPackage === ""
-    title: "Waiting to update"
+    title: strings.t("packagessection.title.1", "Waiting to update")
     // The remainder goes here rather than into a summary row at the foot of
     // the table. A table declared navigable makes every row a cursor stop
     // offering ⏎ Open, and a row that is a count of other rows has nothing to
     // open — the legend would promise it once per visit and do nothing.
     note: root.checkedAt === 0
-      ? "Mirrors have not been checked yet — nothing here is known to be current."
-      : "Mirrors last checked " + root.app.formatWhen(root.checkedAt) + ""
+      ? strings.t("packagessection.mirrorsNever",
+          "Mirrors have not been checked yet — nothing here is known to be current.")
+      : strings.t("updates.mirrorsChecked", "Mirrors last checked %1")
+          .arg(root.app.formatWhen(root.checkedAt))
 
     // First in the section, above the filters that can take them off screen and
     // above the table they would otherwise be rows four and eight of. Two of
@@ -388,7 +395,7 @@ Ui.SectionBody {
         // sentence, and the search index is built by reading these sources
         // for `label: "…"` — a label computed in a ternary is a page the
         // window can no longer find by what is on it.
-        label: "Kernel update"
+        label: strings.t("packagessection.label.4", "Kernel update")
         detail: root.kernelVersions
       }
 
@@ -396,7 +403,7 @@ Ui.SectionBody {
         Layout.fillWidth: true
         visible: !searchHidden && root.omarchyPending !== null
         glyph: ""
-        label: "Omarchy update"
+        label: strings.t("packagessection.label.5", "Omarchy update")
         detail: root.omarchyVersions
       }
     }
@@ -410,7 +417,7 @@ Ui.SectionBody {
       spacing: Style.space(8)
 
       Ui.Chip {
-        text: "Update all"
+        text: strings.t("packagessection.text.1", "Update all")
         onClicked: { root.app.run(["packages", "update"]); root.app.hide() }
       }
     }
@@ -425,11 +432,12 @@ Ui.SectionBody {
   // costs, and what is biggest never said an update was there for it.
   Ui.SettingGroup {
     visible: !searchEmpty && root.openPackage === "" && root.all.length > 0
-    title: "Every package"
-    note: "Open one to see what it is and what would go with it."
+    title: strings.t("packagessection.title.2", "Every package")
+    note: strings.t("packagessection.note.1", "Open one to see what it is and what would go with it.")
       + (root.shown.length > root.listCap
-         ? " Showing the first " + root.listCap + " of " + root.shown.length
-           + " — type a name to reach the rest." : "")
+         ? strings.t("packagessection.showingFirst", " Showing the first %1 of %2")
+             .arg(root.listCap).arg(root.shown.length)
+           + strings.t("packagessection.typeToReachRest", " — type a name to reach the rest.") : "")
 
     // What, then in what order. Two rows rather than one of seven chips: they
     // are two questions, and the words say which is which without a label
@@ -441,7 +449,7 @@ Ui.SectionBody {
       TextField {
         id: nameField
         width: Math.min(parent.width, Style.space(360))
-        placeholderText: "Filter by name"
+        placeholderText: strings.t("packagessection.placeholderText.1", "Filter by name")
         foreground: Ui.Palette.foreground
         accent: Ui.Palette.accent
         onTextChanged: root.nameQuery = text.trim()
@@ -465,7 +473,7 @@ Ui.SectionBody {
 
     Ui.DataTable {
       navigable: true
-      rowActionLabel: "Open"
+      rowActionLabel: strings.t("packagessection.rowActionLabel.1", "Open")
       // The version column carries both when there is an update, rather than
       // an Available column that is blank on thirteen hundred rows and full
       // on ten. An arrow in it is also what says, while reading the list for
@@ -484,18 +492,18 @@ Ui.SectionBody {
       // sorting a thousand packages by somebody else's numbering scheme
       // answers nothing anybody asked.
       columns: root.sized
-        ? [{ title: "Package", weight: 2.4, sort: "name" },
-           { title: "Version", weight: 2.8 },
-           { title: "Size on disk", weight: 1.2, align: "right", sort: "size" },
-           { title: "From", weight: 0.9, sort: "from" }]
-        : [{ title: "Package", weight: 2.4, sort: "name" },
-           { title: "Version", weight: 2.8 },
-           { title: "From", weight: 0.9, sort: "from" }]
+        ? [{ title: strings.t("packagessection.title.5", "Package"), weight: 2.4, sort: "name" },
+           { title: strings.t("packagessection.title.6", "Version"), weight: 2.8 },
+           { title: strings.t("packagessection.title.7", "Size on disk"), weight: 1.2, align: "right", sort: "size" },
+           { title: strings.t("packagessection.title.8", "From"), weight: 0.9, sort: "from" }]
+        : [{ title: strings.t("packagessection.title.9", "Package"), weight: 2.4, sort: "name" },
+           { title: strings.t("packagessection.title.10", "Version"), weight: 2.8 },
+           { title: strings.t("packagessection.title.11", "From"), weight: 0.9, sort: "from" }]
       sortKey: root.order
       sortAscending: root.ascending
       onSortRequested: function(key) { root.sortBy(key) }
-      emptyNote: root.nameQuery !== "" ? "No package here by that name."
-                                       : "Nothing here."
+      emptyNote: root.nameQuery !== "" ? strings.t("packagessection.noPackageByName", "No package here by that name.")
+                                       : strings.t("shared.nothingHere", "Nothing here.")
       rows: {
         var out = []
         var capped = Math.min(root.shown.length, root.listCap)
@@ -530,10 +538,10 @@ Ui.SectionBody {
     // in a run, and it removes what you pick there and then, with no second
     // prompt, since choosing in the finder *is* the confirmation.
     Ui.ActionRow {
-      label: "Remove several at once"
-      description: "Search the ones you chose by name, with each one's details beside it. "
-        + "What you pick there is removed without asking again."
-      buttonText: "Search"
+      label: strings.t("packagessection.label.6", "Remove several at once")
+      description: strings.t("packagessection.description.1", "Search the ones you chose by name, with each one's details beside it. ")
+        + strings.t("packagessection.pickedRemoved", "What you pick there is removed without asking again.")
+      buttonText: strings.t("packagessection.buttonText.1", "Search")
       onTriggered: { root.app.run(["packages", "pick"]); root.app.hide() }
     }
   }
@@ -549,20 +557,22 @@ Ui.SectionBody {
     Ui.FactGrid {
       columns: 4
       layout: [
-        { key: "size", label: "Size on disk" },
-        { key: "version", label: "Version" },
-        { key: "from", label: "From" },
-        { key: "why", label: "Why it is here" },
+        { key: "size", label: strings.t("packagessection.label.10", "Size on disk")},
+        { key: "version", label: strings.t("packagessection.label.11", "Version")},
+        { key: "from", label: strings.t("packagessection.label.12", "From")},
+        { key: "why", label: strings.t("packagessection.label.13", "Why it is here")},
         { rule: true },
-        { key: "when", label: "Installed" },
-        { key: "needed", label: "Needed by", span: 3 }
+        { key: "when", label: strings.t("packagessection.label.14", "Installed")},
+        { key: "needed", label: strings.t("packagessection.label.15", "Needed by"), span: 3 }
       ]
       values: ({
         "size": root.info.bytes !== undefined ? root.app.formatBytes(root.info.bytes) : "—",
         "version": root.info.version !== undefined ? root.info.version : "—",
         "from": root.openOrigin,
         "why": root.info.reason === undefined ? "—"
-          : (root.info.reason === "explicit" ? "You asked for it" : "Something else needs it"),
+          : (root.info.reason === "explicit"
+             ? strings.t("packagessection.whyExplicit", "You asked for it")
+             : strings.t("packagessection.whyRequired", "Something else needs it")),
         "when": root.info.installed !== undefined ? root.info.installed : "—",
         "needed": root.neededBy
       })
@@ -575,17 +585,18 @@ Ui.SectionBody {
     Ui.NoticeRow {
       visible: !searchHidden && root.openPending !== null
       glyph: ""
-      label: "An update is waiting for this one"
+      label: strings.t("packagessection.label.7", "An update is waiting for this one")
       description: root.openPending !== null
-        ? root.openPending.installed + " installed, " + root.openPending.available + " available."
+        ? strings.t("packagessection.pendingCounts", "%1 installed, %2 available.")
+            .arg(root.openPending.installed).arg(root.openPending.available)
         : ""
     }
 
     Ui.ActionRow {
       visible: !searchHidden && String(root.info.url !== undefined ? root.info.url : "") !== ""
-      label: "Home page"
+      label: strings.t("packagessection.label.8", "Home page")
       description: String(root.info.url !== undefined ? root.info.url : "")
-      buttonText: "Open"
+      buttonText: strings.t("packagessection.buttonText.2", "Open")
       onTriggered: { root.app.run(["packages", "site", root.openPackage]); root.app.hide() }
     }
 
@@ -593,14 +604,16 @@ Ui.SectionBody {
     // reason this happens in front of the reader at all. This one is about
     // having pressed the button on the wrong row.
     Ui.ActionRow {
-      label: "Remove this package"
+      label: strings.t("packagessection.label.9", "Remove this package")
       description: {
         var by = root.info.requiredBy !== undefined ? root.info.requiredBy : []
         if (by.length > 0)
-          return "Other packages need this one, so pacman will refuse until they go first."
-        return "Removes it and anything that came in only for it. The terminal lists them and asks."
+          return strings.t("packagessection.removeBlockedBy",
+              "Other packages need this one, so pacman will refuse until they go first.")
+        return strings.t("packagessection.removeDepends",
+            "Removes it and anything that came in only for it. The terminal lists them and asks.")
       }
-      buttonText: "Remove"
+      buttonText: strings.t("packagessection.buttonText.3", "Remove")
       onTriggered: root.askRemove(root.openPackage)
     }
   }

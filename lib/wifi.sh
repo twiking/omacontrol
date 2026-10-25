@@ -100,7 +100,7 @@ wifi_networks() {
             # What the row prints: the words nmcli uses, or the fact that
             # there are none. An open network is worth naming rather than
             # leaving as the absence of a padlock.
-            securityLabel: (if ($row[3] == "" or $row[3] == "--") then "Open"
+            securityLabel: (if ($row[3] == "" or $row[3] == "--") then '"$(i18n_t wifi.open 'Open')"'
                             else ($row[3] | split(" ") | join("/")) end),
             band: ($row[5] // ""),
             associated: ($associated != "" and $row[4] == $associated),

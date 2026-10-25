@@ -172,15 +172,15 @@ about_cmd() {
 about_text() {
   about_state | jq -r '''
     def line(k; v): if (v // "") == "" then empty else "\(k): \(v)" end;
-    [ line("Model"; .model + (if .sku != "" then " (" + .sku + ")" else "" end)),
-      line("CPU"; .cpu),
-      line("GPU"; (.gpus | join(", "))),
-      line("Memory"; (if .memoryBytes then ((.memoryBytes / 1000000000) | round | tostring) + " GB" else "" end)),
-      line("Disk"; (.disk.model + (if .disk.size then " · " + ((.disk.size / 1000000000) | round | tostring) + " GB" else "" end))),
-      line("OS"; "Omarchy " + .version + (if .channel != "" then " (" + .channel + " channel)" else "" end)),
-      line("Kernel"; .kernel),
-      line("Compositor"; .compositor),
-      line("Packages"; (.packages | tostring)),
-      line("OS age"; (if .osAgeDays then (.osAgeDays | tostring) + " days" else "" end))
+    [ line('"$(i18n_t aboutsection.label.1 'Model')"'; .model + (if .sku != "" then " (" + .sku + ")" else "" end)),
+      line('"$(i18n_t aboutsection.label.2 'CPU')"'; .cpu),
+      line('"$(i18n_t aboutsection.label.3 'GPU')"'; (.gpus | join(", "))),
+      line('"$(i18n_t aboutsection.label.4 'Memory')"'; (if .memoryBytes then ((.memoryBytes / 1000000000) | round | tostring) + " GB" else "" end)),
+      line('"$(i18n_t aboutsection.label.5 'Disk')"'; (.disk.model + (if .disk.size then " · " + ((.disk.size / 1000000000) | round | tostring) + " GB" else "" end))),
+      line('"$(i18n_t aboutsection.label.6 'OS')"'; "Omarchy " + .version + (if .channel != "" then " (" + '"$(i18n_fill overviewsection.onChannel '%1 channel' '.channel')"' + ")" else "" end)),
+      line('"$(i18n_t aboutsection.label.7 'Kernel')"'; .kernel),
+      line('"$(i18n_t aboutsection.label.8 'Compositor')"'; .compositor),
+      line('"$(i18n_t aboutsection.label.9 'Packages')"'; (.packages | tostring)),
+      line('"$(i18n_t aboutsection.label.11 'OS age')"'; (if .osAgeDays then '"$(i18n_fill aboutsection.osAge '%1 days' '.osAgeDays | tostring')"' else "" end))
     ] | join("\n")'''
 }

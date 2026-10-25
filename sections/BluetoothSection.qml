@@ -8,6 +8,7 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var bluetooth: app.bluetooth
@@ -41,8 +42,8 @@ Ui.SectionBody {
   // The lists below say what is connected; the header only says whether the
   // adapter is on at all.
   readonly property string headerNote: {
-    if (bluetooth.available === false) return "No adapter"
-    return bluetooth.powered === true ? "" : "Off"
+    if (bluetooth.available === false) return strings.t("bluetoothsection.noAdapter", "No adapter")
+    return bluetooth.powered === true ? "" : strings.t("bluetoothsection.off", "Off")
   }
 
   // Devices come and go while you are looking at them, and discovery is a
@@ -58,7 +59,7 @@ Ui.SectionBody {
 
   Ui.SettingGroup {
     rowSpacing: Style.space(2)
-    title: "Connected"
+    title: strings.t("bluetoothsection.title.1", "Connected")
     visible: !searchEmpty && page.bluetooth.powered === true && page.connectedDevices.length > 0
 
     Repeater {
@@ -69,7 +70,7 @@ Ui.SectionBody {
 
   Ui.SettingGroup {
     rowSpacing: Style.space(2)
-    title: "Paired"
+    title: strings.t("bluetoothsection.title.2", "Paired")
     visible: !searchEmpty && page.bluetooth.powered === true && page.pairedDevices.length > 0
 
     Repeater {
@@ -80,7 +81,7 @@ Ui.SectionBody {
 
   Ui.SettingGroup {
     rowSpacing: Style.space(2)
-    title: "Nearby"
+    title: strings.t("bluetoothsection.title.3", "Nearby")
     visible: !searchEmpty && page.bluetooth.powered === true
 
     Repeater {
@@ -92,14 +93,19 @@ Ui.SectionBody {
   // At the foot rather than the top: pairing usually starts from this
   // machine, and only the other direction needs this.
   Ui.SettingGroup {
-    title: "This computer"
+    title: strings.t("bluetoothsection.title.4", "This computer")
     visible: !searchEmpty && page.bluetooth.powered === true
 
     Ui.SwitchRow {
-      label: "Let other devices find this one"
+      label: strings.t("bluetoothsection.label.1", "Let other devices find this one")
       description: page.bluetooth.adapter !== undefined && page.bluetooth.adapter !== ""
-        ? "Phones and headsets pairing from their own side see it as \u201c" + page.bluetooth.adapter + "\u201d. Switches itself off again after a few minutes."
-        : "Needed only when the other device is doing the pairing. Switches itself off again after a few minutes."
+        ? strings.t("bluetoothsection.discoverableSeeAs",
+            "Phones and headsets pairing from their own side see it as \u201c%1\u201d.")
+            .arg(page.bluetooth.adapter)
+        : strings.t("bluetoothsection.discoverableNeeded",
+            "Needed only when the other device is doing the pairing.")
+      + strings.t("bluetoothsection.discoverableTail",
+          " Switches itself off again after a few minutes.")
       checked: page.bluetooth.discoverable === true
       onRequested: function(next) { page.app.run(["bluetooth", "discoverable", next ? "on" : "off"]) }
     }

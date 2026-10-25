@@ -18,6 +18,7 @@ import "." as Local
 // renders as an empty band. The content goes in an inner Column instead.
 Item {
   id: wifiRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property string ssid: ""
   property int signalStrength: 0
   property bool secured: false
@@ -74,16 +75,16 @@ Item {
     // While the prompt is open the row's keys are the prompt's, since that is
     // what the keyboard is actually in.
     navKeys: wifiRow.prompting
-        ? [{ key: "↵", label: "Connect" }, { key: "esc", label: "Cancel" }]
-      : wifiRow.active ? [{ key: "Space", label: "Disconnect" }]
-      : (wifiRow.needsPassword ? [{ key: "Space", label: "Passphrase" }]
-                               : [{ key: "Space", label: "Connect" }])
+        ? [{ key: "↵", label: strings.t("wifirow.label.1", "Connect")}, { key: "esc", label: strings.t("wifirow.label.2", "Cancel")}]
+      : wifiRow.active ? [{ key: "Space", label: strings.t("wifirow.label.3", "Disconnect")}]
+      : (wifiRow.needsPassword ? [{ key: "Space", label: strings.t("wifirow.label.4", "Passphrase")}]
+                               : [{ key: "Space", label: strings.t("wifirow.label.5", "Connect")}])
     // Forgetting a saved network is the second thing there is to do to one,
     // and it was reachable only by hovering it — invisible to the keyboard
     // and to anyone who never happened to hover. ⌫ is where this window puts
     // "undo what you did to this row"; on a network that is Forget.
     changed: wifiRow.saved && !wifiRow.active && !wifiRow.prompting
-    navResetLabel: "Forget"
+    navResetLabel: strings.t("wifirow.navResetLabel.1", "Forget")
     onResetRequested: wifiRow.forgetRequested()
     onNavActivate: {
       if (wifiRow.active) wifiRow.disconnectRequested()
@@ -174,7 +175,7 @@ Item {
         textFormat: Text.PlainText
         anchors.verticalCenter: parent.verticalCenter
         visible: wifiRow.connecting
-        text: "Connecting…"
+        text: strings.t("wifirow.text.1", "Connecting…")
         color: Local.Palette.accent
         font.family: Local.Palette.fontFamily
         font.pixelSize: Style.font.caption
@@ -183,7 +184,7 @@ Item {
       Button {
         anchors.verticalCenter: parent.verticalCenter
         visible: wifiRow.active && !wifiRow.connecting
-        text: "Disconnect"
+        text: strings.t("wifirow.text.2", "Disconnect")
         bordered: true
         foreground: Local.Palette.foreground
         accent: Local.Palette.accent
@@ -198,7 +199,7 @@ Item {
         // reachable both ways, so its actions have to be visible both ways.
         visible: wifiRow.saved && !wifiRow.active && !wifiRow.connecting
           && (wifiMouse.containsMouse || nav.current)
-        text: "Forget"
+        text: strings.t("wifirow.text.3", "Forget")
         bordered: true
         foreground: Local.Palette.foreground
         accent: Local.Palette.accent
@@ -241,7 +242,7 @@ Item {
         textFormat: Text.PlainText
         anchors.verticalCenter: parent.verticalCenter
         visible: wifiRow.saved && !wifiRow.connecting
-        text: "Saved"
+        text: strings.t("wifirow.text.4", "Saved")
         color: Local.Palette.accent
         font.family: Local.Palette.fontFamily
         font.pixelSize: Style.font.caption
@@ -279,7 +280,8 @@ Item {
     TextField {
       id: passwordField
       width: parent.width - connectButton.width - Style.space(8)
-      placeholderText: "Password for " + wifiRow.ssid
+      placeholderText: strings.t("wifirow.passwordFor", "Password for %1")
+        .arg(wifiRow.ssid)
       password: true
       foreground: Local.Palette.foreground
       accent: Local.Palette.accent
@@ -308,7 +310,7 @@ Item {
     Button {
       id: connectButton
       anchors.verticalCenter: parent.verticalCenter
-      text: "Connect"
+      text: strings.t("wifirow.text.5", "Connect")
       bordered: true
       // Nothing to send yet, and a button that answers a click with silence
       // is worse than one that says it is not ready.

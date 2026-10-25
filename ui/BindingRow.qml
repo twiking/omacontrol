@@ -8,6 +8,7 @@ import "." as Local
 // turned off, and a turned-off one can come back.
 Item {
   id: bindingRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property string keys: ""
   property string description: ""
   property string command: ""
@@ -26,8 +27,8 @@ Item {
     id: nav
     anchors.fill: parent
     searchText: bindingRow.keys + " " + bindingRow.description + " " + bindingRow.command
-    navKeys: bindingRow.mine ? [{ key: "Space", label: "Remove" }]
-      : [{ key: "Space", label: bindingRow.off ? "Restore" : "Turn off" }]
+    navKeys: bindingRow.mine ? [{ key: "Space", label: strings.t("bindingrow.label.1", "Remove")}]
+      : [{ key: "Space", label: bindingRow.off ? strings.t("bindingrow.restore", "Restore") : strings.t("bindingrow.turnOff", "Turn off") }]
     onNavActivate: {
       if (bindingRow.mine) bindingRow.removeRequested()
       else bindingRow.disableRequested()
@@ -99,7 +100,9 @@ Item {
     anchors.rightMargin: Style.space(4)
     anchors.verticalCenter: parent.verticalCenter
     visible: bindingMouse.containsMouse || bindingRow.off
-    text: bindingRow.mine ? "Remove" : (bindingRow.off ? "Restore" : "Turn off")
+    text: bindingRow.mine ? strings.t("bindingrow.label.1", "Remove")
+      : (bindingRow.off ? strings.t("bindingrow.restore", "Restore")
+                      : strings.t("bindingrow.turnOff", "Turn off"))
     bordered: true
     foreground: Local.Palette.foreground
     accent: Local.Palette.accent

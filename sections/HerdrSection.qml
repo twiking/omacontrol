@@ -1,29 +1,31 @@
 import QtQuick
+import qs.Commons
 import "../ui" as Ui
 
 // Injected by the window when the page is loaded: the state every
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
   Ui.SettingGroup {
-    title: "Appearance"
+    title: strings.t("herdrsection.title.1", "Appearance")
 
     Ui.PickerRow {
-      label: "Theme"
+      label: strings.t("herdrsection.label.1", "Theme")
       value: String(page.app.herdrValue("theme.name", "catppuccin"))
       options: [
-        { value: "terminal", label: "Terminal palette" },
-        { value: "catppuccin", label: "Catppuccin" },
-        { value: "tokyo-night", label: "Tokyo Night" },
-        { value: "dracula", label: "Dracula" },
-        { value: "nord", label: "Nord" },
-        { value: "gruvbox", label: "Gruvbox" },
-        { value: "one-dark", label: "One Dark" },
-        { value: "solarized", label: "Solarized" },
-        { value: "kanagawa", label: "Kanagawa" },
-        { value: "rose-pine", label: "Rosé Pine" },
-        { value: "vesper", label: "Vesper" }
+        { value: "terminal", label: strings.t("herdrsection.label.26", "Terminal palette")},
+        { value: "catppuccin", label: strings.t("herdrsection.label.27", "Catppuccin")},
+        { value: "tokyo-night", label: strings.t("herdrsection.label.28", "Tokyo Night")},
+        { value: "dracula", label: strings.t("herdrsection.label.29", "Dracula")},
+        { value: "nord", label: strings.t("herdrsection.label.30", "Nord")},
+        { value: "gruvbox", label: strings.t("herdrsection.label.31", "Gruvbox")},
+        { value: "one-dark", label: strings.t("herdrsection.label.32", "One Dark")},
+        { value: "solarized", label: strings.t("herdrsection.label.33", "Solarized")},
+        { value: "kanagawa", label: strings.t("herdrsection.label.34", "Kanagawa")},
+        { value: "rose-pine", label: strings.t("herdrsection.label.35", "Rosé Pine")},
+        { value: "vesper", label: strings.t("herdrsection.label.36", "Vesper")}
       ]
       onPicked: function(next) { page.app.setHerdr("theme.name", next) }
       changed: page.app.isChanged("herdr:theme.name")
@@ -31,8 +33,8 @@ Ui.SectionBody {
     }
 
     Ui.TextRow {
-      label: "Accent"
-      description: "A colour name, #rrggbb, or rgb(r,g,b)."
+      label: strings.t("herdrsection.label.2", "Accent")
+      description: strings.t("herdrsection.description.1", "A colour name, #rrggbb, or rgb(r,g,b).")
       placeholder: "cyan"
       value: String(page.app.herdrValue("ui.accent", "cyan"))
       onCommitted: function(next) { page.app.setHerdr("ui.accent", next) }
@@ -41,11 +43,11 @@ Ui.SectionBody {
     }
 
     Ui.PickerRow {
-      label: "Tab bar"
+      label: strings.t("herdrsection.label.3", "Tab bar")
       value: String(page.app.herdrValue("ui.tab_bar_position", "top"))
       options: [
-        { value: "top", label: "Top" },
-        { value: "bottom", label: "Bottom" }
+        { value: "top", label: strings.t("herdrsection.label.37", "Top")},
+        { value: "bottom", label: strings.t("herdrsection.label.38", "Bottom")}
       ]
       onPicked: function(next) { page.app.setHerdr("ui.tab_bar_position", next) }
       changed: page.app.isChanged("herdr:ui.tab_bar_position")
@@ -53,7 +55,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Hide the tab bar with one tab"
+      label: strings.t("herdrsection.label.4", "Hide the tab bar with one tab")
       checked: page.app.herdrValue("ui.hide_tab_bar_when_single_tab", false) === true
       onRequested: function(next) { page.app.setHerdr("ui.hide_tab_bar_when_single_tab", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.hide_tab_bar_when_single_tab")
@@ -62,10 +64,10 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Panes"
+    title: strings.t("herdrsection.title.2", "Panes")
 
     Ui.SwitchRow {
-      label: "Borders"
+      label: strings.t("herdrsection.label.5", "Borders")
       checked: page.app.herdrValue("ui.pane_borders", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.pane_borders", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.pane_borders")
@@ -73,8 +75,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Outer border"
-      description: "Off gives tmux-style splitters with no frame around the edge."
+      label: strings.t("herdrsection.label.6", "Outer border")
+      description: strings.t("herdrsection.description.2", "Off gives tmux-style splitters with no frame around the edge.")
       checked: page.app.herdrValue("ui.pane_outer_borders", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.pane_outer_borders", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.pane_outer_borders")
@@ -82,7 +84,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Gaps between panes"
+      label: strings.t("herdrsection.label.7", "Gaps between panes")
       checked: page.app.herdrValue("ui.pane_gaps", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.pane_gaps", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.pane_gaps")
@@ -90,7 +92,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Scrollbars"
+      label: strings.t("herdrsection.label.8", "Scrollbars")
       checked: page.app.herdrValue("ui.pane_scrollbars", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.pane_scrollbars", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.pane_scrollbars")
@@ -98,8 +100,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Agent labels on borders"
-      description: "Shown when a pane has no name of its own."
+      label: strings.t("herdrsection.label.9", "Agent labels on borders")
+      description: strings.t("herdrsection.description.3", "Shown when a pane has no name of its own.")
       checked: page.app.herdrValue("ui.show_agent_labels_on_pane_borders", false) === true
       onRequested: function(next) { page.app.setHerdr("ui.show_agent_labels_on_pane_borders", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.show_agent_labels_on_pane_borders")
@@ -108,10 +110,10 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Sidebar"
+    title: strings.t("herdrsection.title.3", "Sidebar")
 
     Ui.NumberRow {
-      label: "Width"
+      label: strings.t("herdrsection.label.10", "Width")
       suffix: "columns"
       value: Number(page.app.herdrValue("ui.sidebar_width", 26))
       from: 12
@@ -122,8 +124,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Start collapsed"
-      description: "Takes effect the next time Herdr launches."
+      label: strings.t("herdrsection.label.11", "Start collapsed")
+      description: strings.t("herdrsection.description.4", "Takes effect the next time Herdr launches.")
       checked: page.app.herdrValue("ui.sidebar_start_collapsed", false) === true
       onRequested: function(next) { page.app.setHerdr("ui.sidebar_start_collapsed", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.sidebar_start_collapsed")
@@ -131,11 +133,11 @@ Ui.SectionBody {
     }
 
     Ui.PickerRow {
-      label: "When collapsed"
+      label: strings.t("herdrsection.label.12", "When collapsed")
       value: String(page.app.herdrValue("ui.sidebar_collapsed_mode", "compact"))
       options: [
-        { value: "compact", label: "Keep the status rail" },
-        { value: "hidden", label: "Hide it completely" }
+        { value: "compact", label: strings.t("herdrsection.label.39", "Keep the status rail")},
+        { value: "hidden", label: strings.t("herdrsection.label.40", "Hide it completely")}
       ]
       onPicked: function(next) { page.app.setHerdr("ui.sidebar_collapsed_mode", next) }
       changed: page.app.isChanged("herdr:ui.sidebar_collapsed_mode")
@@ -144,15 +146,15 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Behaviour"
+    title: strings.t("herdrsection.title.4", "Behaviour")
 
     Ui.PickerRow {
-      label: "New panes open in"
+      label: strings.t("herdrsection.label.13", "New panes open in")
       value: String(page.app.herdrValue("terminal.new_cwd", "follow"))
       options: [
-        { value: "follow", label: "The folder you were in" },
-        { value: "home", label: "Your home folder" },
-        { value: "current", label: "Herdr's own folder" }
+        { value: "follow", label: strings.t("herdrsection.label.41", "The folder you were in")},
+        { value: "home", label: strings.t("herdrsection.label.42", "Your home folder")},
+        { value: "current", label: strings.t("herdrsection.label.43", "Herdr's own folder")}
       ]
       onPicked: function(next) { page.app.setHerdr("terminal.new_cwd", next) }
       changed: page.app.isChanged("herdr:terminal.new_cwd")
@@ -160,8 +162,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Capture the mouse"
-      description: "Off lets the terminal handle clicks, so links stay clickable."
+      label: strings.t("herdrsection.label.14", "Capture the mouse")
+      description: strings.t("herdrsection.description.5", "Off lets the terminal handle clicks, so links stay clickable.")
       checked: page.app.herdrValue("ui.mouse_capture", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.mouse_capture", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.mouse_capture")
@@ -169,7 +171,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Copy on selection"
+      label: strings.t("herdrsection.label.15", "Copy on selection")
       checked: page.app.herdrValue("ui.copy_on_select", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.copy_on_select", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.copy_on_select")
@@ -177,7 +179,7 @@ Ui.SectionBody {
     }
 
     Ui.NumberRow {
-      label: "Scroll step"
+      label: strings.t("herdrsection.label.16", "Scroll step")
       suffix: "lines"
       value: Number(page.app.herdrValue("ui.mouse_scroll_lines", 3))
       from: 1
@@ -188,7 +190,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Confirm before closing"
+      label: strings.t("herdrsection.label.17", "Confirm before closing")
       checked: page.app.herdrValue("ui.confirm_close", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.confirm_close", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.confirm_close")
@@ -196,7 +198,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Ask for a tab name"
+      label: strings.t("herdrsection.label.18", "Ask for a tab name")
       checked: page.app.herdrValue("ui.prompt_new_tab_name", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.prompt_new_tab_name", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.prompt_new_tab_name")
@@ -204,7 +206,7 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Ask for a workspace name"
+      label: strings.t("herdrsection.label.19", "Ask for a workspace name")
       checked: page.app.herdrValue("ui.prompt_new_workspace_name", false) === true
       onRequested: function(next) { page.app.setHerdr("ui.prompt_new_workspace_name", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.prompt_new_workspace_name")
@@ -213,16 +215,16 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Notifications"
+    title: strings.t("herdrsection.title.5", "Notifications")
 
     Ui.PickerRow {
-      label: "Pop-ups"
+      label: strings.t("herdrsection.label.20", "Pop-ups")
       value: String(page.app.herdrValue("ui.toast.delivery", "off"))
       options: [
-        { value: "off", label: "None" },
-        { value: "herdr", label: "Inside Herdr" },
-        { value: "terminal", label: "Through the terminal" },
-        { value: "system", label: "Desktop notifications" }
+        { value: "off", label: strings.t("herdrsection.label.44", "None")},
+        { value: "herdr", label: strings.t("herdrsection.label.45", "Inside Herdr")},
+        { value: "terminal", label: strings.t("herdrsection.label.46", "Through the terminal")},
+        { value: "system", label: strings.t("herdrsection.label.47", "Desktop notifications")}
       ]
       onPicked: function(next) { page.app.setHerdr("ui.toast.delivery", next) }
       changed: page.app.isChanged("herdr:ui.toast.delivery")
@@ -230,8 +232,8 @@ Ui.SectionBody {
     }
 
     Ui.SwitchRow {
-      label: "Sounds"
-      description: "Played when an agent changes state in a background workspace."
+      label: strings.t("herdrsection.label.21", "Sounds")
+      description: strings.t("herdrsection.description.6", "Played when an agent changes state in a background workspace.")
       checked: page.app.herdrValue("ui.sound.enabled", true) === true
       onRequested: function(next) { page.app.setHerdr("ui.sound.enabled", next ? "true" : "false") }
       changed: page.app.isChanged("herdr:ui.sound.enabled")
@@ -240,11 +242,11 @@ Ui.SectionBody {
   }
 
   Ui.SettingGroup {
-    title: "Keys"
+    title: strings.t("herdrsection.title.6", "Keys")
 
     Ui.TextRow {
-      label: "Prefix"
-      description: "Every prefix+… shortcut starts with this."
+      label: strings.t("herdrsection.label.22", "Prefix")
+      description: strings.t("herdrsection.description.7", "Every prefix+… shortcut starts with this.")
       placeholder: "ctrl+b"
       value: String(page.app.herdrValue("keys.prefix", "ctrl+b"))
       onCommitted: function(next) { page.app.setHerdr("keys.prefix", next) }
@@ -253,26 +255,26 @@ Ui.SectionBody {
     }
 
     Ui.ActionRow {
-      label: "Every shortcut"
-      description: "The full list, as Herdr has it."
-      buttonText: "Show…"
+      label: strings.t("herdrsection.label.23", "Every shortcut")
+      description: strings.t("herdrsection.description.8", "The full list, as Herdr has it.")
+      buttonText: strings.t("herdrsection.buttonText.1", "Show…")
       onTriggered: page.app.run(["menu", "run", "learn.herdr-keybindings"])
     }
 
     Ui.ActionRow {
-      label: "The rest of the config"
-      description: "Open config.toml for the settings this page does not cover."
-      buttonText: "Edit…"
+      label: strings.t("herdrsection.label.24", "The rest of the config")
+      description: strings.t("herdrsection.description.9", "Open config.toml for the settings this page does not cover.")
+      buttonText: strings.t("herdrsection.buttonText.2", "Edit…")
       onTriggered: page.app.editConfig("$HOME/.config/herdr/config.toml")
     }
   }
 
   Ui.SettingGroup {
-    title: "Window title"
+    title: strings.t("herdrsection.title.7", "Window title")
 
     Ui.TextRow {
-      label: "Title"
-      description: "Tokens: {hostname}, {workspace}, {tab}, {pane}, {terminal_title}."
+      label: strings.t("herdrsection.label.25", "Title")
+      description: strings.t("herdrsection.description.10", "Tokens: {hostname}, {workspace}, {tab}, {pane}, {terminal_title}.")
       placeholder: "{hostname}: {workspace}"
       value: String(page.app.herdrValue("ui.window_title", ""))
       onCommitted: function(next) { page.app.setHerdr("ui.window_title", next) }

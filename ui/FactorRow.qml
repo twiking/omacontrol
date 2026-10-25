@@ -6,6 +6,7 @@ import "." as Local
 // A multiplier such as a display scale or scroll speed, in steps of 0.05.
 Local.SettingRow {
   id: factorRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property real value: 1
   property real minimum: 0.1
   property real maximum: 3
@@ -30,7 +31,7 @@ Local.SettingRow {
     if (Math.abs(value - pending) < 0.001 || Math.abs(value - basis) > 0.001) stepping = false
   }
 
-  navKeys: [{ key: "\u2190\u2192", label: "Adjust" }]
+  navKeys: [{ key: "\u2190\u2192", label: strings.t("factorrow.label.1", "Adjust")}]
 
   // One door for the keys and the slider: an optimistic value the drag did not
   // take part in is the bug this exists to fix.

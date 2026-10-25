@@ -8,6 +8,7 @@ import "." as Local
 // them all is faster than opening a list to find out what they are.
 SettingRow {
   id: choiceRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property var options: []
   property string value: ""
@@ -37,7 +38,7 @@ SettingRow {
     if (next !== at) choiceRow.picked(String(list[next].value))
   }
 
-  navKeys: [{ key: "\u2190\u2192", label: "Choose" }]
+  navKeys: [{ key: "\u2190\u2192", label: strings.t("choicerow.label.1", "Choose")}]
 
   onNavStep: function(delta) { choiceRow.navPick(delta) }
   onNavActivate: choiceRow.navPick(1)

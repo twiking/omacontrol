@@ -1,11 +1,13 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.Commons
 import "../ui" as Ui
 
 // Injected by the window when the page is loaded: the state every
 // row reads, and the calls every control makes.
 Ui.SectionBody {
   id: page
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var app: null
 
   readonly property var fonts: app.state.fonts !== undefined ? app.state.fonts : []
@@ -14,8 +16,8 @@ Ui.SectionBody {
 
   Ui.SettingGroup {
     Ui.NumberRow {
-      label: "Text size"
-      description: "Scales the shell, GTK apps, and terminals together."
+      label: strings.t("fontsection.label.1", "Text size")
+      description: strings.t("fontsection.description.1", "Scales the shell, GTK apps, and terminals together.")
       suffix: "px"
       value: page.app.state.textScale !== undefined ? Number(page.app.state.textScale) : 12
       from: 9
@@ -31,7 +33,7 @@ Ui.SectionBody {
   // read identically when both are printed in the font you already have.
   //
   Ui.SettingGroup {
-    title: "Font"
+    title: strings.t("fontsection.title.1", "Font")
     visible: !searchEmpty
 
     Repeater {

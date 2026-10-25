@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Commons
 import qs.Ui
 import "." as Local
 
@@ -6,6 +7,7 @@ import "." as Local
 // and the button hands off to the command that owns it.
 Local.SettingRow {
   id: actionRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property string buttonText: ""
   signal triggered()
 
@@ -15,7 +17,7 @@ Local.SettingRow {
   property bool actionEnabled: true
 
   // The row has one button, so activating the row presses it.
-  navKeys: [{ key: "\u21b5", label: "Open" }]
+  navKeys: [{ key: "\u21b5", label: strings.t("actionrow.label.1", "Open")}]
 
   onNavActivate: if (actionRow.actionEnabled) actionRow.triggered()
 

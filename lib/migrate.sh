@@ -27,17 +27,21 @@ migrate_pending() {
   bash "$MIGRATE_SCRIPT" --pending || { echo 'null'; return; }
   local last='null'
   [[ -f $MIGRATE_LAST ]] && last=$(jq -c 'if type == "object" then . else null end' "$MIGRATE_LAST" 2>/dev/null)
-  jq -cn --argjson last "${last:-null}" '
+  # The notice strings are resolved here, not spliced into the filter: the
+  # filter below stays one single-quoted program, and a splice on one line of a
+  # multi-line program is a quote that can trip on the next line's.
+  jq -cn --argjson last "${last:-null}" \
+    --arg title "$(jq -rn "$(i18n_t migrate.title 'Your settings from OmaSettings have not come across')")" \
+    --arg stopped "$(jq -rn --argjson last "${last:-null}" "$(i18n_fill migrate.stopped 'The last try stopped: %1' '$last.message')")" \
+    --arg pending "$(jq -rn "$(i18n_t migrate.pending 'Until they do, this window cannot mark them as changed or put back what they replaced. It may close for a moment while they move.')")" \
+    --arg action "$(jq -rn "$(i18n_t migrate.action 'Bring them over')")" '
     { kind: "migrate",
       id: "migrate-omasettings",
       urgent: ($last != null and $last.ok == false),
-      title: "Your settings from OmaSettings have not come across",
-      note: (if $last != null and $last.ok == false
-             then "The last try stopped: " + $last.message
-             else "Until they do, this window cannot mark them as changed or put back what they replaced. It may close for a moment while they move."
-             end),
+      title: $title,
+      note: (if $last != null and $last.ok == false then $stopped else $pending end),
       migrate: true,
-      actionLabel: "Bring them over" }'
+      actionLabel: $action }'
 }
 
 migrate_cmd() {

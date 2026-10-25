@@ -29,10 +29,10 @@ overview_toggles() {
     --argjson dnd "${dnd:-{\}}" \
     --argjson awake "${awake:-{\}}" \
     --argjson dictation "${dictation:-{\}}" '''
-    [ { id: "nightlight", label: "Night light" } + $nightlight,
-      { id: "dnd", label: "Do not disturb" } + $dnd,
-      { id: "awake", label: "Stay awake" } + $awake,
-      { id: "dictation", label: "Dictation" } + $dictation ]
+    [ { id: "nightlight", label: '"$(i18n_t overview.toggle.nightlight 'Night light')"' } + $nightlight,
+      { id: "dnd", label: '"$(i18n_t overview.toggle.dnd 'Do not disturb')"' } + $dnd,
+      { id: "awake", label: '"$(i18n_t overview.toggle.awake 'Stay awake')"' } + $awake,
+      { id: "dictation", label: '"$(i18n_t overview.toggle.dictation 'Dictation')"' } + $dictation ]
     # A switch for something that is not installed is a switch that cannot do
     # anything, so it is not offered.
     | map(select(.available != false))'''
@@ -45,7 +45,7 @@ overview_nightlight() {
   emit_json "$(jq -c '{ on: (.enabled == true),
            note: (if .enabled == true
                   then ((.temperature | tostring) + " K")
-                  else "Off" end) }' <<<"$status" 2>/dev/null)" '{"available":false}'
+                  else '"$(i18n_t overview.toggle.off 'Off')"' end) }' <<<"$status" 2>/dev/null)" '{"available":false}'
 }
 
 overview_dnd() {
@@ -54,8 +54,8 @@ overview_dnd() {
   # read: notifications are held in the running process.
   state=$(capture omarchy-shell notifications dndState)
   case ${state:-} in
-    on)  echo '{"on":true,"note":"Notifications held"}' ;;
-    off) echo '{"on":false,"note":"Notifications shown"}' ;;
+    on)  jq -cn '{"on":true,"note":'"$(i18n_t overview.toggle.dndOn 'Notifications held')"'}' ;;
+    off) jq -cn '{"on":false,"note":'"$(i18n_t overview.toggle.dndOff 'Notifications shown')"'}' ;;
     *)   echo '{"available":false}' ;;
   esac
 }
@@ -65,8 +65,8 @@ overview_stay_awake() {
   status=$(capture omarchy-toggle-idle --status)
   [[ -n $status ]] || { echo '{"available":false}'; return; }
   emit_json "$(jq -c '{ on: (.enabled == true),
-           note: (if .enabled == true then "Idle inhibited"
-                  else "Idles and locks normally" end) }' <<<"$status" 2>/dev/null)" \
+           note: (if .enabled == true then '"$(i18n_t overview.toggle.awakeOn 'Idle inhibited')"'
+                  else '"$(i18n_t overview.toggle.awakeOff 'Idles and locks normally')"' end) }' <<<"$status" 2>/dev/null)" \
     '{"available":false}'
 }
 
@@ -87,8 +87,8 @@ overview_dictation() {
   emit_json "$(jq -c '''
     if ((.model // "") == "") then { available: false }
     else { on: ((.class // "idle") == "recording"),
-           note: (if (.class // "") == "recording" then "Recording"
-                  else ("Ready · " + .model) end) }
+           note: (if (.class // "") == "recording" then '"$(i18n_t overview.toggle.recording 'Recording')"'
+                  else '"$(i18n_fill overview.toggle.ready 'Ready · %1' '.model')"' end) }
     end''' <<<"$status" 2>/dev/null)" '{"available":false}'
 }
 
@@ -141,14 +141,14 @@ overview_low_peripherals() {
     [[ -n ${percent:-} ]] || continue
     [[ ${percent%%.*} -lt $OVERVIEW_PERIPHERAL_LOW ]] 2>/dev/null || continue
     model=$(awk -F': +' '/model:/ { print $2; exit }' <<<"$info")
-    [[ -n ${model:-} ]] || model="A Bluetooth device"
+    [[ -n ${model:-} ]] || model=$(jq -rn "$(i18n_t overview.peripheral.unknown 'A Bluetooth device')")
     out+=("$(jq -cn --arg model "$model" --argjson percent "${percent%%.*}" \
       '{ kind: "peripheral",
          id: ("peripheral:" + $model),
          device: $model, percent: $percent,
-         title: ($model + " is at " + ($percent | tostring) + " %"),
-         note: "Charge it before it drops off Bluetooth.",
-         action: "bluetooth", actionLabel: "Open Bluetooth" }')")
+         title: '"$(i18n_fill overview.peripheral.title '%1 is at %2 %' '$model' '$percent | tostring')"',
+         note: '"$(i18n_t overview.peripheral.note 'Charge it before it drops off Bluetooth.')"',
+         action: "bluetooth", actionLabel: '"$(i18n_t overview.peripheral.action 'Open Bluetooth')"'}')")
   done <<<"$devices"
 
   ((${#out[@]})) && printf '%s\n' "${out[@]}" | jq -cs '.' || echo '[]'
@@ -200,9 +200,9 @@ overview_boot_space() {
     { kind: "boot",
       id: "boot",
       urgent: true,
-      title: ("/boot is " + ($pct | tostring) + " % full"),
-      note: "A kernel update may not fit.",
-      action: "disk", actionLabel: "Open Disk" }'''
+      title: '"$(i18n_fill overview.boot.title '/boot is %1 % full' '$pct | tostring')"',
+      note: '"$(i18n_t overview.boot.note 'A kernel update may not fit.')"',
+      action: "disk", actionLabel: '"$(i18n_t overview.boot.action 'Open Disk')"'}'''
 }
 
 overview_state() {

@@ -13,6 +13,7 @@ import "." as Local
 // at the same end of a row makes that a coin toss.
 Local.NavRow {
   id: notice
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property string glyph: ""
   property bool urgent: false
@@ -97,7 +98,7 @@ Local.NavRow {
       textFormat: Text.PlainText
       anchors.verticalCenter: parent.verticalCenter
       visible: notice.dismissable
-      text: ""
+      text: strings.t("noticerow.text.1", "")
       color: dismissMouse.containsMouse ? Local.Palette.foreground : Local.Palette.shade(0.35)
       font.family: Local.Palette.fontFamily
       font.pixelSize: Style.font.body

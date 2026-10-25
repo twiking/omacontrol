@@ -6,6 +6,7 @@ import "." as Local
 // selected one marked rather than described. The whole row is the target.
 Item {
   id: pickableRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property string label: ""
   property string glyph: ""
@@ -19,7 +20,7 @@ Item {
     id: nav
     anchors.fill: parent
     searchText: pickableRow.label + " " + pickableRow.detail
-    navKeys: [{ key: "Space", label: "Select" }]
+    navKeys: [{ key: "Space", label: strings.t("pickablerow.label.1", "Select")}]
     onNavActivate: pickableRow.picked()
   }
 

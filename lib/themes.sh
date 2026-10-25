@@ -118,7 +118,7 @@ unlock_list() {
   [[ -n $current ]] || current=default
 
   preview="${OMARCHY_PATH:-/usr/share/omarchy}/default/plymouth/preview-unlock.png"
-  [[ -f $preview ]] && rows+="default"$'\t'"Default"$'\t'"$preview"$'\n'
+  [[ -f $preview ]] && rows+="default"$'\t'"$(jq -rn "$(i18n_t theme.unlockDefault 'Default')")"$'\t'"$preview"$'\n'
 
   while IFS= read -r name; do
     [[ -n $name ]] || continue

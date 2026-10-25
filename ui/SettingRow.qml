@@ -8,6 +8,7 @@ import "." as Local
 // NavRow underneath; this is only the layout.
 NavRow {
   id: settingRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   default property alias control: controlHolder.data
 
@@ -80,7 +81,7 @@ NavRow {
         textFormat: Text.PlainText
         anchors.baseline: titleText.baseline
         visible: settingRow.changed
-        text: "(reset)"
+        text: strings.t("settingrow.text.1", "(reset)")
         color: resetMouse.containsMouse ? Local.Palette.accent : Local.Palette.muted
         font.family: Local.Palette.fontFamily
         font.pixelSize: Style.font.caption

@@ -6,6 +6,7 @@ import "." as Local
 
 SettingRow {
   id: pickerRow
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
   property var options: []
   property string value: ""
   property bool searchable: false
@@ -26,7 +27,7 @@ SettingRow {
   // Space opens the list, the way clicking the control would; stepping picks
   // a neighbour without opening anything. While the list is open it owns the
   // keyboard — its own Up/Down and Escape are the ones that should run.
-  navKeys: [{ key: "Space", label: "Open list" }, { key: "\u2190\u2192", label: "Choose" }]
+  navKeys: [{ key: "Space", label: strings.t("pickerrow.label.1", "Open list")}, { key: "\u2190\u2192", label: strings.t("pickerrow.label.2", "Choose")}]
 
   onNavActivate: if (dropdownLoader.item) dropdownLoader.item.open()
   navBlocking: dropdownLoader.item ? dropdownLoader.item.popupOpen === true : false
@@ -65,7 +66,7 @@ SettingRow {
       width: parent ? parent.width : 0
       showLabel: false
       fontFamily: Local.Palette.fontFamily
-      placeholderText: "Search…"
+      placeholderText: strings.t("pickerrow.placeholderText.1", "Search…")
       value: pickerRow.value
       options: pickerRow.normalized
       onChanged: function(next) { pickerRow.picked(next) }

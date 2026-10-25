@@ -22,6 +22,7 @@ import "." as Local
 // strip of chrome across the top, not the subject of the page.
 Local.NavRow {
   id: tile
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property string glyph: ""
   property string note: ""
@@ -34,7 +35,7 @@ Local.NavRow {
   showBand: false
 
   onNavActivate: tile.requested(!tile.checked)
-  navKeys: [{ key: "Space", label: "Toggle" }]
+  navKeys: [{ key: "Space", label: strings.t("toggletile.label.1", "Toggle")}]
 
   implicitHeight: Math.max(badge.height, control.height) + Style.space(18)
 

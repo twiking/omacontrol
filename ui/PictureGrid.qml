@@ -18,6 +18,7 @@ import "." as Local
 // wallpaper can be anything, and a row of mixed heights reads as a mistake.
 Item {
   id: grid
+  Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
   property var items: []
   property real tileWidth: Style.space(190)
@@ -133,7 +134,7 @@ Item {
             textFormat: Text.PlainText
             anchors.centerIn: parent
             visible: tile.modelData.source === ""
-            text: "No preview"
+            text: strings.t("picturegrid.text.1", "No preview")
             color: Local.Palette.muted
             font.family: Local.Palette.fontFamily
             font.pixelSize: Style.font.caption
