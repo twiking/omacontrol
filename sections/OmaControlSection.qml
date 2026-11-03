@@ -17,7 +17,7 @@ Ui.SectionBody {
   // the bar there is nowhere for them to go.
   readonly property bool inBar: {
     var layout = app.barState.layout !== undefined ? app.barState.layout : ({})
-    var sections = ["left", "center", "right"]
+    var sections = (typeof Util.barSections !== "undefined" ? Util.barSections : ["left", "center", "right"])
     for (var s = 0; s < sections.length; s++) {
       var list = layout[sections[s]] || []
       for (var i = 0; i < list.length; i++)

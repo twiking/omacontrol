@@ -101,7 +101,7 @@ usage:
   omacontrol plugin directory | directory-fetch | directory-refresh
                                          (what plugins.omarchy.org says: verified, author, hearts)
   omacontrol search                      (every setting the pages declare, for the search box)
-  omacontrol bar move <widget-id> left|center|right | bar shift <widget-id> up|down
+  omacontrol bar move <widget-id> left|centerBegin|center|centerEnd|right|tray | bar shift <widget-id> up|down
                  | bar enable|disable <widget-id>   (in or out of the bar, settings and place kept)
   omacontrol menu run <entry-id>            (runs an Omarchy menu entry's action)
   omacontrol herdr state | set <key> <value>

@@ -64,8 +64,11 @@ BAR_STATE_JQ='{
   # the rest stay in shell.json for the widget to read.
   layout: {
     left: [($cfg.bar.layout.left // [])[] | .id],
+    centerBegin: [($cfg.bar.layout.centerBegin // [])[] | .id],
     center: [($cfg.bar.layout.center // [])[] | .id],
-    right: [($cfg.bar.layout.right // [])[] | .id]
+    centerEnd: [($cfg.bar.layout.centerEnd // [])[] | .id],
+    right: [($cfg.bar.layout.right // [])[] | .id],
+    tray: [($cfg.bar.layout.tray // [])[] | .id]
   },
   # A spacer is nothing but its width, so a row cannot describe itself
   # without it. Null for every other widget, and in step with the ids
@@ -76,8 +79,11 @@ BAR_STATE_JQ='{
   # string, and one would end it.)
   sizes: {
     left: [($cfg.bar.layout.left // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
+    centerBegin: [($cfg.bar.layout.centerBegin // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
     center: [($cfg.bar.layout.center // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
-    right: [($cfg.bar.layout.right // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end]
+    centerEnd: [($cfg.bar.layout.centerEnd // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
+    right: [($cfg.bar.layout.right // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
+    tray: [($cfg.bar.layout.tray // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end]
   }
 }'
 

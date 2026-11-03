@@ -67,17 +67,6 @@ Ui.SectionBody {
       changed: page.app.isChanged("bar-transparent")
       onResetRequested: page.app.resetSetting("bar-transparent")
     }
-
-    Ui.PickerRow {
-      label: "Centered widget"
-      description: "The widget the centre section is anchored on."
-      value: page.app.barState.centerAnchor !== undefined ? String(page.app.barState.centerAnchor) : ""
-      options: page.app.barWidgetIds()
-      searchable: true
-      onPicked: function(next) { page.app.set("bar-center-anchor", next) }
-      changed: page.app.isChanged("bar-center-anchor")
-      onResetRequested: page.app.resetSetting("bar-center-anchor")
-    }
   }
 
   // Every bar widget appears once on this page: under the section it sits in,
@@ -92,8 +81,17 @@ Ui.SectionBody {
     return out
   }
 
+  // Omarchy's own section list (left, centerBegin, center, centerEnd, right,
+  // tray), so a new section shows up here without another edit. The old
+  // three-section list hid every widget in centerBegin, centerEnd and tray.
+  readonly property var sectionKeys: (typeof Util.barSections !== "undefined" ? Util.barSections : ["left", "center", "right"])
+  function sectionTitle(key) {
+    return ({ left: "Left", centerBegin: "Center start", center: "Center",
+              centerEnd: "Center end", right: "Right", tray: "Tray" })[key] || String(key)
+  }
+
   function inBar(id) {
-    var sections = ["left", "center", "right"]
+    var sections = page.sectionKeys
     for (var s = 0; s < sections.length; s++) {
       var list = widgets(sections[s])
       for (var i = 0; i < list.length; i++)
@@ -112,11 +110,7 @@ Ui.SectionBody {
   // vocabulary the bar has: there is no position beyond which section and
   // which place in it.
   Repeater {
-    model: [
-      { key: "left", title: "Left" },
-      { key: "center", title: "Center" },
-      { key: "right", title: "Right" }
-    ]
+    model: page.sectionKeys.map(function(key) { return { key: key, title: page.sectionTitle(key) } })
 
     delegate: Ui.SettingGroup {
       id: sectionGroup
@@ -170,13 +164,11 @@ Ui.SectionBody {
           // Which section a widget belongs to is one decision, so it is one
           // button: Move asks, and the two sections it is not in answer.
           property bool choosing: false
-          readonly property var elsewhere: ["left", "center", "right"].filter(function(s) {
+          readonly property var elsewhere: page.sectionKeys.filter(function(s) {
             return s !== widgetRow.section
           })
 
-          function sectionTitle(key) {
-            return key === "left" ? "Left" : key === "center" ? "Center" : "Right"
-          }
+          function sectionTitle(key) { return page.sectionTitle(key) }
 
           // Everything you can do to a row sits in front of its name, in the
           // order you reach for it: where it sits, then which section, then
@@ -376,11 +368,11 @@ Ui.SectionBody {
         }
 
         Repeater {
-          model: addSpacer.choosing ? ["left", "center", "right"] : []
+          model: addSpacer.choosing ? page.sectionKeys : []
           delegate: Button {
             required property var modelData
             anchors.verticalCenter: parent.verticalCenter
-            text: modelData === "left" ? "Left" : modelData === "center" ? "Center" : "Right"
+            text: page.sectionTitle(modelData)
             bordered: true
             foreground: Ui.Palette.foreground
             accent: Ui.Palette.accent
