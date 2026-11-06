@@ -261,15 +261,19 @@ processes_state() {
   list=$(processes_build "$(par_get sample)" "$(par_get table)" "$(par_get containers)")
   par_end
 
-  jq -cn \
+  # The tree goes in on stdin. On a busy machine it passes 128 KiB, and the
+  # kernel refuses any one argv or environment string longer than that, so as
+  # an --argjson it failed the whole read with "Argument list too long" and the
+  # page drew nothing.
+  printf '%s' "${list:-{\}}" | jq -c \
     --argjson cpu "${cpu:-null}" \
     --argjson cores "${cores:-[]}" \
     --argjson memory "${memory:-{\}}" \
     --argjson load "${load:-{\}}" \
-    --argjson list "${list:-{\}}" \
     --argjson temperature "${temp:-null}" \
-    '{ cpu: $cpu, cores: $cores, memory: $memory, load: $load, temperature: $temperature,
-       tree: ($list.tree // []), busiest: ($list.busiest // []), heaviest: ($list.heaviest // []) }'
+    '. as $list
+     | { cpu: $cpu, cores: $cores, memory: $memory, load: $load, temperature: $temperature,
+         tree: ($list.tree // []), busiest: ($list.busiest // []), heaviest: ($list.heaviest // []) }'
 }
 
 # Whatever the machine is willing to call the CPU's temperature. Nothing at all
