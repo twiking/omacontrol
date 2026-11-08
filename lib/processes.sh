@@ -281,8 +281,11 @@ processes_temperature() {
     | jq -r '[ to_entries[] | select(.key | test("coretemp|k10temp|zenpower"))
                | .value | to_entries[] | select(.key | test("Package|Tctl|Tdie"))
                | .value | to_entries[] | select(.key | endswith("_input")) | .value ]
-             | first // empty' 2>/dev/null)
-  [[ -n ${degrees:-} ]] && printf '%.0f' "$degrees" || printf 'null'
+             | first // empty | round' 2>/dev/null)
+  # Rounded by jq, not by printf '%.0f': bash's printf reads the number in the
+  # reader's locale, so under es_CO "51.375" is not a number, it printed
+  # "51null", and the whole page came back empty.
+  [[ -n ${degrees:-} ]] && printf '%s' "$degrees" || printf 'null'
 }
 
 # A row in the top lists is every process of one program, so ending it ends
