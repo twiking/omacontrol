@@ -79,7 +79,7 @@ Hyprland has for them.
 <td width="50%" valign="top">
 <a href="docs/screenshots/bar.png"><img src="docs/screenshots/bar.png" alt="Bar page"></a><br>
 <b>Bar</b><br>
-Position, transparency, which widget the centre is anchored on, and which
+Position, background, which widget the centre is anchored on, and which
 widgets sit left, centre and right — moved, added, disabled and spaced out.
 </td>
 <td width="50%" valign="top">

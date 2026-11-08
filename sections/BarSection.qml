@@ -59,13 +59,18 @@ Ui.SectionBody {
       onResetRequested: page.app.resetSetting("bar-position")
     }
 
-    Ui.SwitchRow {
-      label: "Transparent"
-      description: "Drops the bar's own background so the wallpaper shows through."
-      checked: page.app.barState.transparent === true
-      onRequested: function(next) { page.app.set("bar-transparent", next ? "true" : "false") }
-      changed: page.app.isChanged("bar-transparent")
-      onResetRequested: page.app.resetSetting("bar-transparent")
+    Ui.PickerRow {
+      label: "Background"
+      description: "Glassy blurs what is behind the bar; clear lets the wallpaper show through."
+      value: page.app.barState.background !== undefined ? String(page.app.barState.background) : "opaque"
+      options: [
+        { value: "opaque", label: "Opaque" },
+        { value: "glassy", label: "Glassy" },
+        { value: "none", label: "Clear" }
+      ]
+      onPicked: function(next) { page.app.set("bar-background", next) }
+      changed: page.app.isChanged("bar-background")
+      onResetRequested: page.app.resetSetting("bar-background")
     }
 
     Ui.PickerRow {

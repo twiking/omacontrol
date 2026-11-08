@@ -24,6 +24,13 @@ gear_field() {
   esac
 }
 
+# The same reading omarchy-bar makes: a shell.json from before the background
+# had three values says transparent instead, which is clear.
+bar_background() {
+  jq -r '.bar.background // (if .bar.transparent == true then "none" else "opaque" end)' \
+    <<<"$(read_shell_json)"
+}
+
 setting_current() {
   local cfg
   case ${1:-} in
@@ -32,7 +39,10 @@ setting_current() {
     text-scale) omarchy display text size 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?' | head -n1 ;;
     nightlight) nightlight_enabled ;;
     bar-position) jq -r '.bar.position // "top"' <<<"$(read_shell_json)" ;;
-    bar-transparent) jq -r '((.bar.transparent // false) | tostring)' <<<"$(read_shell_json)" ;;
+    bar-background) bar_background ;;
+    # Kept for a change recorded before the background had three values, so
+    # it can still be put back.
+    bar-transparent) [[ $(bar_background) == none ]] && echo true || echo false ;;
     bar-center-anchor) jq -r '.bar.centerAnchor // ""' <<<"$(read_shell_json)" ;;
     bar-active-switch-count|bar-network-warning|bar-battery-warnings)
       jq -r --arg field "$(gear_field "$1")" '[ (.bar.layout // {})[][]?
@@ -116,8 +126,11 @@ track_write() {
 }
 
 # The keys this window has written and what they were before it did.
+# A bar-transparent record is a background changed before the background had
+# three values, and the page shows it as one.
 written_changed() {
-  jq -c '(.written // {}) | keys' <<<"$(read_store)"
+  jq -c '(.written // {}) | keys
+    | map(if . == "bar-transparent" then "bar-background" else . end) | unique' <<<"$(read_store)"
 }
 
 set_key() {
@@ -178,6 +191,11 @@ set_key_apply() {
       case $value in
         top|bottom|left|right) omarchy bar position "$value" ;;
         *) die "bad bar position '$value'" ;;
+      esac ;;
+    bar-background)
+      case $value in
+        opaque|glassy|none) omarchy bar background "$value" ;;
+        *) die "bad bar background '$value'" ;;
       esac ;;
     bar-transparent)
       case $value in
@@ -286,6 +304,15 @@ setting_reset() {
       setting_reset "$k"
     done < <(devices_changed | jq -r '.[]')
     hypr_reset --all
+    return
+  fi
+
+  # The older record holds the value from before either was changed, so it is
+  # the one to go back to.
+  if [[ $key == bar-background ]] &&
+     jq -e '(.written // {}) | has("bar-transparent")' <<<"$(read_store)" >/dev/null; then
+    setting_reset bar-transparent
+    edit_store 'if .written then .written |= del(.["bar-background"]) else . end'
     return
   fi
 

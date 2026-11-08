@@ -50,7 +50,9 @@ state_changed() {
 # or the other depending on which read answered last.
 BAR_STATE_JQ='{
   position: (($cfg.bar.position // "top") | tostring),
-  transparent: (($cfg.bar.transparent // false) == true),
+  # Omarchy 4.5 replaced the on/off transparent with three backgrounds, and
+  # reads transparent in an older shell.json as clear — so does this.
+  background: (($cfg.bar.background // (if $cfg.bar.transparent == true then "none" else "opaque" end)) | tostring),
   centerAnchor: (($cfg.bar.centerAnchor // "") | tostring),
   # The gear absent from the bar has no entry, and reads as every default.
   gear: ([ ($cfg.bar.layout // {})[][]? | select(.id == "io.github.twiking.omacontrol") ]
