@@ -91,10 +91,13 @@ themes_backgrounds() {
 
   files=$(find -L "$mine" "$theirs" -maxdepth 1 -type f \
     \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' \
-       -o -iname '*.bmp' -o -iname '*.webp' \) 2>/dev/null | sort)
+       -o -iname '*.bmp' -o -iname '*.webp' \
+       -o -iname '*.mp4' -o -iname '*.m4v' -o -iname '*.mov' \
+       -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.avi' \) 2>/dev/null | sort)
 
   jq -R -s -c --arg current "${current:-}" 'split("\n") | map(select(length > 0))
     | map({ path: .,
+            video: (test("\\.(mp4|m4v|mov|webm|mkv|avi)$"; "i")),
             title: (. | split("/") | last | sub("\\.[^.]+$"; "")
                       | sub("^[0-9]+[-_ ]*"; "") | gsub("[-_]"; " ")
                       | split(" ") | map(select(length > 0)

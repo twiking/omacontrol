@@ -11,6 +11,10 @@ Ui.SectionBody {
   id: page
   property var app: null
 
+  // Omarchy answers the default workspace layout from 4.5 on; where it
+  // cannot, neither can a per-workspace floating layout be asked of it.
+  readonly property bool omarchyOwnsLayouts: String(app.state.layoutDefault || "") !== ""
+
   readonly property var rules: app.workspaceRules
   readonly property var setups: app.workspaceSetups
   readonly property var displays: (app.monitors !== undefined ? app.monitors : []).filter(function(m) {
@@ -137,7 +141,7 @@ Ui.SectionBody {
           { value: "dwindle", label: "Dwindle" },
           { value: "master", label: "Master" },
           { value: "scrolling", label: "Scrolling" }
-        ]
+        ].concat(page.omarchyOwnsLayouts ? [{ value: "floating", label: "Floating" }] : [])
         value: String(setupGroup.modelData.layout || "")
         onPicked: function(next) { page.app.run(["workspaces", "setup", "set", setupGroup.id, "layout", next]) }
       }

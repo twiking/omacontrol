@@ -17,11 +17,12 @@ edit_shell_json() {
 
 # ------------------------------------------------------------- bar layout
 #
-# A bar widget lives in one of three sections, in a definite order, and carries
-# its own settings in the same object. Every edit here moves that object whole:
+# A bar widget lives in one of six sections — 4.5 added the two centre
+# shoulders and the tray drawer — in a definite order, and carries its own
+# settings in the same object. Every edit here moves that object whole:
 # rebuilding it from the id alone would quietly drop the widget's settings.
 
-BAR_SECTIONS='["left","center","right"]'
+BAR_SECTIONS='["left","centerBegin","center","centerEnd","right","tray"]'
 
 bar_widget_section() {
   local id=$1
@@ -42,10 +43,8 @@ bar_widget_section() {
 # carried alongside only to be checked, so a page working from a list read a
 # moment ago cannot resize the widget that has since moved into that slot.
 bar_check_section() {
-  case $1 in
-    left | center | right) ;;
-    *) die "expected left, center or right" ;;
-  esac
+  [[ $(jq -r --arg s "$1" 'any(. == $s)' <<<"$BAR_SECTIONS") == true ]] ||
+    die "expected one of left, centerBegin, center, centerEnd, right or tray"
 }
 
 bar_entry_id_at() {
@@ -70,20 +69,17 @@ bar_check_at() {
 bar_move() {
   local id=$1 target=$2
   [[ -n $id ]] || die "no widget id given"
-  case $target in
-    left | center | right) ;;
-    *) die "expected left, center or right" ;;
-  esac
+  bar_check_section "$target"
+  [[ $target == tray && $id == $BAR_SPACER_ID ]] && die "a spacer has no place in the tray drawer"
   [[ -n $(bar_widget_section "$id") ]] || die "'$id' is not in the bar"
 
   edit_shell_json --arg id "$id" --arg target "$target" '
     .bar //= {}
     | .bar.layout //= {}
-    | ([(.bar.layout.left // []), (.bar.layout.center // []), (.bar.layout.right // [])]
-       | flatten | map(select(.id == $id)) | first) as $widget
-    | .bar.layout.left = ((.bar.layout.left // []) | map(select(.id != $id)))
-    | .bar.layout.center = ((.bar.layout.center // []) | map(select(.id != $id)))
-    | .bar.layout.right = ((.bar.layout.right // []) | map(select(.id != $id)))
+    | ([.bar.layout[]? | (if type == "array" then . else [] end)]
+        | flatten | map(select(.id == $id)) | first) as $widget
+    | .bar.layout |= with_entries(
+        if (.value | type) == "array" then .value |= map(select(.id != $id)) else . end)
     | .bar.layout[$target] = ((.bar.layout[$target] // []) + [$widget])'
 }
 
@@ -167,6 +163,7 @@ bar_spacer_add() {
   local section=$1 size=${2:-}
   [[ -n $size ]] || size=$BAR_SPACER_DEFAULT
   bar_check_section "$section"
+  [[ $section == tray ]] && die "a spacer has no place in the tray drawer"
   bar_spacer_size_valid "$size" || die "'$size' is not a width in pixels"
 
   edit_shell_json --arg s "$section" --arg id "$BAR_SPACER_ID" --argjson size "$size" '

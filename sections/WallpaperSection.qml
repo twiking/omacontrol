@@ -34,6 +34,7 @@ Ui.SectionBody {
     var list = app.wallpaperList
     for (var i = 0; i < list.length; i++)
       out.push({ source: list[i].path, title: list[i].title,
+                 video: list[i].video === true,
                  value: list[i].path, current: list[i].current === true })
     return out
   }

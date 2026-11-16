@@ -82,7 +82,7 @@
 2	Warning	ui/PickableRow.qml	Member "body" not found on type "QObject" [missing-property]
 1	Warning	ui/PickableRow.qml	Member "caption" not found on type "QObject" [missing-property]
 1	Warning	ui/PickableRow.qml	Member "controlHeight" not found on type "QObject" [missing-property]
-2	Warning	ui/PictureGrid.qml	Member "caption" not found on type "QObject" [missing-property]
+3	Warning	ui/PictureGrid.qml	Member "caption" not found on type "QObject" [missing-property]
 2	Warning	ui/PictureGrid.qml	Member "hairline" not found on type "QObject" [missing-property]
 1	Warning	ui/ReadingRow.qml	Member "body" not found on type "QObject" [missing-property]
 4	Warning	ui/SettingGroup.qml	Member "app" not found on type "QQuickItem" [missing-property]

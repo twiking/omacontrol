@@ -5,29 +5,48 @@ import "../ui" as Ui
 // row reads, and the calls every control makes.
 //
 // The tiling engine, and the knobs belonging to whichever one is running.
-// Showing all three engines' settings at once would mostly show settings that
+// Showing all engines' settings at once would mostly show settings that
 // do nothing, so each group appears only when its engine is the active one.
+//
+// From Omarchy 4.5 the default layout is Omarchy's to answer — its menu
+// saves a choice that wins over Hyprland's own — so the engine is asked of
+// `omarchy-hyprland-workspace-layout-default`, and a change goes through it
+// too. Where the command cannot answer, an older shell, the raw Hyprland
+// setting is read and written as it always was.
 Ui.SectionBody {
   id: page
   property var app: null
 
-  readonly property string engine: String(app.hyprValue("layout", "dwindle"))
+  // Empty when the shell predates the command.
+  readonly property bool omarchyOwns: String(app.state.layoutDefault || "") !== ""
+  readonly property string engine: omarchyOwns
+    ? String(app.state.layoutDefault)
+    : String(app.hyprValue("layout", "dwindle"))
+  readonly property string settingKey: omarchyOwns ? "workspace-layout" : "layout"
 
   Ui.SettingGroup {
     title: "Engine"
 
     Ui.ChoiceRow {
       label: "Layout"
-      description: "Scrolling gives you niri-style side-scrolling columns."
+      description: "Scrolling gives you niri-style side-scrolling columns. Floating turns a workspace into a floating desktop, titlebars and dock and all."
       value: page.engine
-      options: [
-        { value: "dwindle", label: "Dwindle" },
-        { value: "master", label: "Master" },
-        { value: "scrolling", label: "Scrolling" }
-      ]
-      onPicked: function(next) { page.app.setHypr("layout", next) }
-      changed: page.app.isChanged("layout")
-      onResetRequested: page.app.resetSetting("layout")
+      options: {
+        var out = [
+          { value: "dwindle", label: "Dwindle" },
+          { value: "scrolling", label: "Scrolling" }
+        ]
+        // Floating is Omarchy's to hand out from 4.5 on; an older shell has
+        // no general:layout that would accept it.
+        if (page.omarchyOwns) out.push({ value: "floating", label: "Floating" })
+        // A machine still running master keeps the choice until it moves
+        // off — and on 4.5 that move is what hands the default to Omarchy.
+        if (page.engine === "master") out.push({ value: "master", label: "Master" })
+        return out
+      }
+      onPicked: function(next) { page.app.set(page.settingKey, next) }
+      changed: page.app.isChanged(page.settingKey)
+      onResetRequested: page.app.resetSetting(page.settingKey)
     }
   }
 

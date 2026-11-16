@@ -30,9 +30,10 @@ setting_current() {
     theme) omarchy-theme-current 2>/dev/null | head -n1 ;;
     font) omarchy font current 2>/dev/null | head -n1 ;;
     text-scale) omarchy display text size 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?' | head -n1 ;;
+    workspace-layout) omarchy-hyprland-workspace-layout-default 2>/dev/null | head -n1 ;;
     nightlight) nightlight_enabled ;;
     bar-position) jq -r '.bar.position // "top"' <<<"$(read_shell_json)" ;;
-    bar-transparent) jq -r '((.bar.transparent // false) | tostring)' <<<"$(read_shell_json)" ;;
+    bar-background) jq -r '.bar.background // (if ((.bar.transparent // false) == true) then "none" else "opaque" end)' <<<"$(read_shell_json)" ;;
     bar-center-anchor) jq -r '.bar.centerAnchor // ""' <<<"$(read_shell_json)" ;;
     bar-active-switch-count|bar-network-warning|bar-battery-warnings)
       jq -r --arg field "$(gear_field "$1")" '[ (.bar.layout // {})[][]?
@@ -120,6 +121,22 @@ written_changed() {
   jq -c '(.written // {}) | keys' <<<"$(read_store)"
 }
 
+# The transparency switch became a three-way background with 4.5, under a new
+# name. The recorded original moves with it — true meant none, anything else
+# meant opaque — so Undo all puts back the look that was there instead of
+# asking a setter a question it no longer answers.
+bar_background_migrate() {
+  jq -e '(.written // {}) | has("bar-transparent")' <<<"$(read_store)" >/dev/null || return 0
+  local look=opaque
+  [[ $(jq -r '.written["bar-transparent"]' <<<"$(read_store)") == true ]] && look=none
+  if jq -e '(.written // {}) | has("bar-background")' <<<"$(read_store)" >/dev/null; then
+    edit_store 'if .written then .written |= del(.["bar-transparent"]) else . end'
+  else
+    edit_store 'if .written then .written |= del(.["bar-transparent"]) else . end
+      | .written = ((.written // {}) | .["bar-background"] = $look)' --arg look "$look"
+  fi
+}
+
 set_key() {
   local key=${1:-} value=${2:-}
 
@@ -153,6 +170,24 @@ set_key_apply() {
     theme) [[ -n $value ]] || die "no theme given"; omarchy-theme-set "$value" ;;
     font) [[ -n $value ]] || die "no font given"; omarchy font set "$value" ;;
     text-scale) [[ -n $value ]] || die "no text size given"; omarchy display text size "$value" ;;
+    workspace-layout)
+      case $value in
+        dwindle|scrolling|floating) omarchy-hyprland-workspace-layout-default "$value" ;;
+        master)
+          # Master is the one layout Omarchy's command cannot set, so an
+          # original of master means there was no saved default to speak of:
+          # the choice lived in Hyprland's general:layout alone. The saved
+          # default goes first, then the shell comes back — a reload would
+          # not re-read the mode files, and would let a file answer for a
+          # value the user's config does not carry — and the option is
+          # asserted live last, since the reload reads it from their config.
+          rm -f "${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts/default.lua"
+          omarchy-restart-hyprctl >/dev/null 2>&1 || true
+          hypr_apply_live general:layout master str
+          omarchy-shell -q omarchy.workspaces refresh >/dev/null 2>&1 || true
+          omarchy-shell -q omarchy.dock refresh >/dev/null 2>&1 || true ;;
+        *) die "'$value' is not a layout Omarchy sets" ;;
+      esac ;;
     nightlight)
       # The toggle script has no absolute set, so only flip when the requested
       # state differs from the live one — repeated clicks stay idempotent.
@@ -179,10 +214,10 @@ set_key_apply() {
         top|bottom|left|right) omarchy bar position "$value" ;;
         *) die "bad bar position '$value'" ;;
       esac ;;
-    bar-transparent)
+    bar-background)
       case $value in
-        true|false|toggle) omarchy bar transparent "$value" ;;
-        *) die "bad bar transparency '$value'" ;;
+        opaque|glassy|none) omarchy bar background "$value" ;;
+        *) die "bad bar background '$value'" ;;
       esac ;;
     bar-center-anchor)
       [[ -n $value ]] || die "no widget id given"
@@ -272,11 +307,19 @@ setting_reset() {
   local key=${1:-}
   [[ -n $key ]] || die "no setting given"
 
+  # The transparency switch's old name. Reached only from outside --all,
+  # which has already migrated: the original now lives under the new name.
+  if [[ $key == bar-transparent ]]; then bar_background_migrate; return 0; fi
+
   # Everything this window has a hand in, each by its own way back. The
   # per-device overrides go through the same door as the rest rather than
   # being cleared behind their backs.
   if [[ $key == --all ]]; then
     local k
+    # A transparency toggle recorded under the old name moves to the new one
+    # before the keys are listed, or the loop below would ask a setter that
+    # no longer answers.
+    bar_background_migrate
     while read -r k; do
       [[ -n $k ]] || continue
       setting_reset "$k"

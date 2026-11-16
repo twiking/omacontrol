@@ -291,6 +291,13 @@ workspace_setup_set() {
   edit_store '.workspaceRules = ((.workspaceRules // {})
     | .[$i] = ((.[$i] // {}) | if $v == "" or $v == false then del(.[$f]) else .[$f] = $v end))' \
     --arg i "$id" --arg f "$field" --argjson v "$json"
+  # A floating layout lives in Omarchy's mode files, not in the rule — moving
+  # to or away from one means a file written or deleted, and a shell restart
+  # for it to be read. Anything else needs no more than the reload below.
+  if [[ $field == layout ]]; then
+    workspace_floating_sync
+    return 0
+  fi
   hyprctl reload >/dev/null 2>&1 || true
 }
 
@@ -319,6 +326,9 @@ workspace_setup_remove() {
       die "removing that rule would have broken $(basename "$file"), so nothing changed"
     fi
   done
+  # The setup is gone; a mode file this window wrote for a floating layout
+  # goes with it, or the workspace stays floating behind the page's back.
+  workspace_floating_sync
   hyprctl reload >/dev/null 2>&1 || true
 }
 
@@ -328,17 +338,61 @@ render_workspace_setups_lua() {
   [[ $rules == "{}" ]] && return 0
   echo ""
   echo "-- Workspaces set up from the Workspaces page."
+  # Floating is not a Hyprland layout engine — it is Omarchy's own mode, the
+  # one its Super + L cycle hands out, and it is written to the mode file
+  # Omarchy loads its saved layouts from, not here: this file is required
+  # above Omarchy's toggles, where o.workspace_mode does not exist yet. The
+  # rule carries the workspace's other fields either way.
   jq -r 'to_entries[] | select(.value != {})
     | .value as $r
     | [ (if ($r.monitor // "") != "" then "monitor = \"" + $r.monitor + "\"" else empty end),
         (if $r.default == true then "default = true" else empty end),
         (if $r.persistent == true then "persistent = true" else empty end),
         (if ($r.name // "") != "" then "default_name = \"" + $r.name + "\"" else empty end),
-        (if ($r.layout // "") != "" then "layout = \"" + $r.layout + "\"" else empty end),
+        (if ($r.layout // "") != "" and ($r.layout // "") != "floating"
+         then "layout = \"" + $r.layout + "\"" else empty end),
         (if $r.minimal == true then "gaps_in = 0, gaps_out = 0, no_border = true, no_rounding = true, decorate = false" else empty end)
       ] as $fields
     | select(($fields | length) > 0)
     | "hl.workspace_rule({ workspace = \"" + .key + "\", " + ($fields | join(", ")) + " })"' <<<"$rules"
+}
+
+# The mode files behind Omarchy's Super + L: one Lua file per workspace under
+# its state directory, each calling o.workspace_mode — the only place a
+# floating workspace can be asked for, and the only place Omarchy reads them
+# from, at a point in the load where the function exists.
+#
+# Only workspaces this window keeps a setup for are touched: a mode file for
+# a workspace with no setup here belongs to Super + L, not to us. One of ours
+# whose layout has moved off floating (or whose setup is gone) is deleted, so
+# the workspace does not stay floating behind the page's back; a layout the
+# user has since toggled by hand is overwritten by this same hand, the way
+# Omarchy's own default-setter overwrites the ones it manages.
+workspace_floating_sync() {
+  local modes id layout changes=0 file
+  modes="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
+  mkdir -p "$modes"
+
+  while IFS=$'\t' read -r id layout; do
+    [[ -n $id ]] || continue
+    file="$modes/$id.lua"
+    if [[ $layout == floating ]]; then
+      local wanted
+      printf -v wanted 'o.workspace_mode({ workspace = "%s", mode = "floating" })\n' "$id"
+      [[ $(read_file "$file" 2>/dev/null) == "$wanted" ]] && continue
+      printf '%s' "$wanted" | write_file "$file" managed || continue
+      changes=$((changes + 1))
+    elif [[ -f $file ]]; then
+      rm -f "$file" && changes=$((changes + 1))
+    fi
+  done < <(workspace_setups_ours | jq -r 'to_entries[] | "\(.key)\t\(.value.layout // "")"')
+
+  (( changes > 0 )) || return 0
+  # A mode file is read when the workspace-modes module loads, which a reload
+  # does not redo: the shell of Hyprland has to come back for a new or
+  # deleted file to count.
+  omarchy-restart-hyprctl >/dev/null 2>&1 || true
+  omarchy-shell -q omarchy.workspaces refresh >/dev/null 2>&1 || true
 }
 
 # One field of one class. A class is a regex to Hyprland, so the two

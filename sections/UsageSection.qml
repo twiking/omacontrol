@@ -73,7 +73,7 @@ Ui.SectionBody {
 
     Ui.ReadingRow {
       label: "No agent usage to report"
-      description: "Nothing on this machine collects it. Omarchy ships collectors for Claude Code, Codex and Fireworks."
+      description: "Nothing on this machine collects it. Omarchy ships a collector for each agent it can serve."
     }
   }
 

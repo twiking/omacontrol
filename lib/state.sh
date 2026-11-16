@@ -20,6 +20,11 @@ state_fonts() { capture omarchy font list | lines_to_array; }
 state_theme() { capture omarchy-theme-current | head -n1; }
 state_font() { capture omarchy font current | head -n1; }
 state_textscale() { capture omarchy display text size | grep -oE '[0-9]+(\.[0-9]+)?' | head -n1; }
+
+# Omarchy's answer for which layout empty workspaces start in — its own saved
+# choice, else Hyprland's. Empty on a shell that predates the command, which
+# is how the page knows to fall back to the raw Hyprland setting.
+state_layoutdefault() { capture omarchy-hyprland-workspace-layout-default 2>/dev/null; }
 state_monitors() { monitor_state 2>/dev/null || echo '[]'; }
 
 # Speed and full opacity are not keywords, so they ride along with the ones
@@ -50,7 +55,10 @@ state_changed() {
 # or the other depending on which read answered last.
 BAR_STATE_JQ='{
   position: (($cfg.bar.position // "top") | tostring),
-  transparent: (($cfg.bar.transparent // false) == true),
+  # opaque, glassy or none, as the bar itself reads it; transparent is the
+  # pre-4.5 spelling the bar still honours.
+  background: ($cfg.bar.background
+    // (if (($cfg.bar.transparent // false) == true) then "none" else "opaque" end)),
   centerAnchor: (($cfg.bar.centerAnchor // "") | tostring),
   # The gear absent from the bar has no entry, and reads as every default.
   gear: ([ ($cfg.bar.layout // {})[][]? | select(.id == "io.github.twiking.omacontrol") ]
@@ -61,12 +69,10 @@ BAR_STATE_JQ='{
     }),
   # Just the ids, in bar order: the window pairs them with the plugin
   # list for names. Settings needed by this page are read separately;
-  # the rest stay in shell.json for the widget to read.
-  layout: {
-    left: [($cfg.bar.layout.left // [])[] | .id],
-    center: [($cfg.bar.layout.center // [])[] | .id],
-    right: [($cfg.bar.layout.right // [])[] | .id]
-  },
+  # the rest stay in shell.json for the widget to read. Every section
+  # the config carries, since 4.5 has six and a widget can sit in any.
+  layout: (($cfg.bar.layout // {}) | with_entries(
+    .value = ([((.value // []) | (if type == "array" then . else [] end))[]? | .id]))),
   # A spacer is nothing but its width, so a row cannot describe itself
   # without it. Null for every other widget, and in step with the ids
   # above, since a spacer is named by its place rather than by an id.
@@ -74,11 +80,14 @@ BAR_STATE_JQ='{
   # id, so the width is read from there and not from a nested object.
   # (No apostrophes in here: this whole filter is one single-quoted
   # string, and one would end it.)
-  sizes: {
-    left: [($cfg.bar.layout.left // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
-    center: [($cfg.bar.layout.center // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
-    right: [($cfg.bar.layout.right // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end]
-  }
+  sizes: (($cfg.bar.layout // {}) | with_entries(
+    # A spacer is nothing but its width, so a row cannot describe itself
+    # without it. Null for every other widget, and in step with the ids
+    # above, since a spacer is named by its place rather than by an id.
+    # (No apostrophes in here: this whole filter is one single-quoted
+    # string, and one would end it.)
+    .value = ([((.value // []) | (if type == "array" then . else [] end))[]?
+      | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end])))
 }'
 
 # A scoped read. The window answers a click with one of these: a bar edit
@@ -115,6 +124,7 @@ state_slice() {
     theme) jq -cn --arg v "$(state_theme)" '{ theme: $v }' ;;
     font) jq -cn --arg v "$(state_font)" '{ font: $v }' ;;
     textScale) jq -cn --arg v "$(state_textscale)" '{ textScale: (($v | tonumber?) // 1) }' ;;
+    layoutDefault) jq -cn --arg v "$(state_layoutdefault)" '{ layoutDefault: $v }' ;;
 
     themes) jq -cn --argjson v "$(state_themes)" '{ themes: $v }' ;;
     fonts) jq -cn --argjson v "$(state_fonts)" '{ fonts: $v }' ;;
@@ -185,13 +195,15 @@ state() {
   # Named slices answer on their own; with nothing named, the whole document.
   if (( $# > 0 )); then state_slices "$@"; return; fi
 
-  local cfg themes fonts theme font nightlight hypr hyprchanged searchindex monitors compose plugins pluginupdates selfupdate agents groups iconfonts datetime herdr textscale workspaces branding
+  local cfg themes fonts theme font nightlight hypr hyprchanged searchindex monitors compose plugins pluginupdates selfupdate agents groups iconfonts datetime herdr textscale layoutdefault workspaces branding
   cfg=$(read_shell_json)
 
   # Before the block, both of them: this is the one part of a state read that
   # writes, and the menu cache is filled here so that every producer inherits
   # it rather than each subshell parsing the menu again and losing it.
   heal_managed_lua
+  layout_override_retire
+  bar_background_migrate
   menu_entries >/dev/null
 
   par_begin
@@ -200,6 +212,7 @@ state() {
   par_run theme state_theme
   par_run font state_font
   par_run textscale state_textscale
+  par_run layoutdefault state_layoutdefault
   par_run nightlight nightlight_enabled
   par_run hypr state_hypr
   par_run hyprchanged state_changed
@@ -234,6 +247,7 @@ state() {
   theme=$(par_get theme)
   font=$(par_get font)
   textscale=$(par_get textscale)
+  layoutdefault=$(par_get layoutdefault)
   nightlight=$(par_get nightlight false)
   hypr=$(par_get hypr '{}')
   hyprchanged=$(par_get hyprchanged '[]')
@@ -321,6 +335,7 @@ state() {
     --argjson power "${power:-{\}}" \
     --argjson audio "${audio:-{\}}" \
     --arg textScale "${textscale:-1}" \
+    --arg layoutDefault "${layoutdefault:-}" \
     '{
       theme: $theme,
       themes: $themes,
@@ -328,6 +343,7 @@ state() {
       fonts: $fonts,
       nightlight: $nightlight,
       textScale: (($textScale | tonumber?) // 1),
+      layoutDefault: $layoutDefault,
       bar: '"$BAR_STATE_JQ"',
       idle: {
         screensaver: (($cfg.idle.screensaver // 150) | tonumber? // 150),

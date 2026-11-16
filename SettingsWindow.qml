@@ -1479,6 +1479,7 @@ Item {
     if (name.indexOf("nvim:") === 0) return ["nvim", "hyprChanged"]
     if (name === "font") return ["font", "hyprChanged"]
     if (name === "text-scale") return ["textScale", "hyprChanged"]
+    if (name === "workspace-layout") return ["layoutDefault", "hyprChanged"]
     if (name === "nightlight") return ["nightlight"]
     // A theme moves more than it is asked to — colours, fonts, the bar — so
     // it is left to the whole read rather than guessed at in parts.

@@ -86,9 +86,16 @@ Item {
               maskSpreadAtMin: 1.0
             }
 
+            // A background can be a video from 4.5 on, and a frame of one is
+            // not the tile's to draw: it says what it is instead. Omarchy's
+            // own picker draws it the same way.
             Image {
               anchors.fill: parent
-              source: tile.modelData.source !== "" ? "file://" + tile.modelData.source : ""
+              // A video has no frame to decode here, and an invisible Image
+              // still loads its source: no URL at all rather than a hidden one.
+              visible: tile.modelData.video !== true
+              source: tile.modelData.video === true || tile.modelData.source === ""
+                ? "" : "file://" + tile.modelData.source
               fillMode: Image.PreserveAspectCrop
               // Decoded at the size it is drawn *in device pixels*, rather
               // than at the size it was saved: twenty-five 4K wallpapers at
@@ -102,6 +109,16 @@ Item {
               sourceSize.width: Math.round(picture.width * Screen.devicePixelRatio)
               asynchronous: true
               cache: true
+            }
+
+            Text {
+              textFormat: Text.PlainText
+              anchors.centerIn: parent
+              visible: tile.modelData.video === true
+              text: "Video"
+              color: Local.Palette.muted
+              font.family: Local.Palette.fontFamily
+              font.pixelSize: Style.font.caption
             }
           }
 
