@@ -50,8 +50,9 @@ state_changed() {
 # or the other depending on which read answered last.
 BAR_STATE_JQ='{
   position: (($cfg.bar.position // "top") | tostring),
-  transparent: (($cfg.bar.transparent // false) == true),
-  centerAnchor: (($cfg.bar.centerAnchor // "") | tostring),
+  # Omarchy 4.5 replaced the transparent flag with a three-way look; a config
+  # from before it still says transparent, and the bar reads that as none.
+  background: (($cfg.bar.background // (if $cfg.bar.transparent == true then "none" else "opaque" end)) | tostring),
   # The gear absent from the bar has no entry, and reads as every default.
   gear: ([ ($cfg.bar.layout // {})[][]? | select(.id == "io.github.twiking.omacontrol") ]
     | (first // {}) | {
@@ -62,11 +63,8 @@ BAR_STATE_JQ='{
   # Just the ids, in bar order: the window pairs them with the plugin
   # list for names. Settings needed by this page are read separately;
   # the rest stay in shell.json for the widget to read.
-  layout: {
-    left: [($cfg.bar.layout.left // [])[] | .id],
-    center: [($cfg.bar.layout.center // [])[] | .id],
-    right: [($cfg.bar.layout.right // [])[] | .id]
-  },
+  layout: ([ "left", "centerBegin", "center", "centerEnd", "right", "tray" ]
+    | map({ key: ., value: [($cfg.bar.layout[.] // [])[] | .id] }) | from_entries),
   # A spacer is nothing but its width, so a row cannot describe itself
   # without it. Null for every other widget, and in step with the ids
   # above, since a spacer is named by its place rather than by an id.
@@ -74,11 +72,10 @@ BAR_STATE_JQ='{
   # id, so the width is read from there and not from a nested object.
   # (No apostrophes in here: this whole filter is one single-quoted
   # string, and one would end it.)
-  sizes: {
-    left: [($cfg.bar.layout.left // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
-    center: [($cfg.bar.layout.center // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end],
-    right: [($cfg.bar.layout.right // [])[] | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end]
-  }
+  sizes: ([ "left", "centerBegin", "center", "centerEnd", "right", "tray" ]
+    | map({ key: ., value: [($cfg.bar.layout[.] // [])[]
+        | if .id == "omarchy.spacer" then ((.size // 12) | tonumber? // 12) else null end] })
+    | from_entries)
 }'
 
 # A scoped read. The window answers a click with one of these: a bar edit

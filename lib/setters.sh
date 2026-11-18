@@ -32,8 +32,7 @@ setting_current() {
     text-scale) omarchy display text size 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?' | head -n1 ;;
     nightlight) nightlight_enabled ;;
     bar-position) jq -r '.bar.position // "top"' <<<"$(read_shell_json)" ;;
-    bar-transparent) jq -r '((.bar.transparent // false) | tostring)' <<<"$(read_shell_json)" ;;
-    bar-center-anchor) jq -r '.bar.centerAnchor // ""' <<<"$(read_shell_json)" ;;
+    bar-background) jq -r '.bar.background // (if .bar.transparent == true then "none" else "opaque" end)' <<<"$(read_shell_json)" ;;
     bar-active-switch-count|bar-network-warning|bar-battery-warnings)
       jq -r --arg field "$(gear_field "$1")" '[ (.bar.layout // {})[][]?
         | select(.id == "io.github.twiking.omacontrol") | .[$field] ] | first | . != false' \
@@ -179,14 +178,11 @@ set_key_apply() {
         top|bottom|left|right) omarchy bar position "$value" ;;
         *) die "bad bar position '$value'" ;;
       esac ;;
-    bar-transparent)
+    bar-background)
       case $value in
-        true|false|toggle) omarchy bar transparent "$value" ;;
-        *) die "bad bar transparency '$value'" ;;
+        opaque|glassy|none) omarchy bar background "$value" ;;
+        *) die "bad bar background '$value'" ;;
       esac ;;
-    bar-center-anchor)
-      [[ -n $value ]] || die "no widget id given"
-      edit_shell_json '.bar = ((.bar // {}) | .centerAnchor = $id)' --arg id "$value" ;;
     bar-active-switch-count|bar-network-warning|bar-battery-warnings)
       [[ $value == true || $value == false ]] || die "'$value' is not true or false"
       edit_shell_json '(.bar.layout[]?[]? | select(.id == "io.github.twiking.omacontrol"))

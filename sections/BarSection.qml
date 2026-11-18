@@ -39,6 +39,24 @@ Ui.SectionBody {
   // slack is space between a widget and its own controls.
   readonly property real controlsWidth: Style.space(200)
 
+  // The bar's sections in the order Omarchy draws them (4.5+). centerBegin and
+  // centerEnd hang off either edge of the centred group; tray lives inside the
+  // tray widget's drawer.
+  readonly property var sections: [
+    { key: "left", title: "Left" },
+    { key: "centerBegin", title: "Center begin" },
+    { key: "center", title: "Center" },
+    { key: "centerEnd", title: "Center end" },
+    { key: "right", title: "Right" },
+    { key: "tray", title: "Tray" }
+  ]
+  readonly property var sectionKeys: sections.map(function(s) { return s.key })
+  function sectionTitle(key) {
+    for (var i = 0; i < sections.length; i++)
+      if (sections[i].key === key) return sections[i].title
+    return key
+  }
+
   // The bar stores ids; the plugin list is where the names are.
   function widgetName(id) {
     var list = app.plugins
@@ -59,24 +77,14 @@ Ui.SectionBody {
       onResetRequested: page.app.resetSetting("bar-position")
     }
 
-    Ui.SwitchRow {
-      label: "Transparent"
-      description: "Drops the bar's own background so the wallpaper shows through."
-      checked: page.app.barState.transparent === true
-      onRequested: function(next) { page.app.set("bar-transparent", next ? "true" : "false") }
-      changed: page.app.isChanged("bar-transparent")
-      onResetRequested: page.app.resetSetting("bar-transparent")
-    }
-
     Ui.PickerRow {
-      label: "Centered widget"
-      description: "The widget the centre section is anchored on."
-      value: page.app.barState.centerAnchor !== undefined ? String(page.app.barState.centerAnchor) : ""
-      options: page.app.barWidgetIds()
-      searchable: true
-      onPicked: function(next) { page.app.set("bar-center-anchor", next) }
-      changed: page.app.isChanged("bar-center-anchor")
-      onResetRequested: page.app.resetSetting("bar-center-anchor")
+      label: "Background"
+      description: "Opaque, glassy, or none so the wallpaper shows through."
+      value: page.app.barState.background !== undefined ? String(page.app.barState.background) : "opaque"
+      options: ["opaque", "glassy", "none"]
+      onPicked: function(next) { page.app.set("bar-background", next) }
+      changed: page.app.isChanged("bar-background")
+      onResetRequested: page.app.resetSetting("bar-background")
     }
   }
 
@@ -93,9 +101,9 @@ Ui.SectionBody {
   }
 
   function inBar(id) {
-    var sections = ["left", "center", "right"]
-    for (var s = 0; s < sections.length; s++) {
-      var list = widgets(sections[s])
+    var keys = sectionKeys
+    for (var s = 0; s < keys.length; s++) {
+      var list = widgets(keys[s])
       for (var i = 0; i < list.length; i++)
         if (String(list[i]) === String(id)) return true
     }
@@ -112,11 +120,7 @@ Ui.SectionBody {
   // vocabulary the bar has: there is no position beyond which section and
   // which place in it.
   Repeater {
-    model: [
-      { key: "left", title: "Left" },
-      { key: "center", title: "Center" },
-      { key: "right", title: "Right" }
-    ]
+    model: page.sections
 
     delegate: Ui.SettingGroup {
       id: sectionGroup
@@ -168,15 +172,11 @@ Ui.SectionBody {
           }
 
           // Which section a widget belongs to is one decision, so it is one
-          // button: Move asks, and the two sections it is not in answer.
+          // button: Move asks, and the sections it is not in answer.
           property bool choosing: false
-          readonly property var elsewhere: ["left", "center", "right"].filter(function(s) {
+          readonly property var elsewhere: page.sectionKeys.filter(function(s) {
             return s !== widgetRow.section
           })
-
-          function sectionTitle(key) {
-            return key === "left" ? "Left" : key === "center" ? "Center" : "Right"
-          }
 
           // Everything you can do to a row sits in front of its name, in the
           // order you reach for it: where it sits, then which section, then
@@ -230,13 +230,13 @@ Ui.SectionBody {
             }
 
             // Which section a widget belongs to is one decision, so it is one
-            // button: Move asks, and the two sections it is not in answer.
+            // button: Move asks, and the sections it is not in answer.
             Repeater {
               model: widgetRow.choosing ? widgetRow.elsewhere : []
               delegate: Button {
                 required property var modelData
                 anchors.verticalCenter: parent.verticalCenter
-                text: widgetRow.sectionTitle(modelData)
+                text: page.sectionTitle(modelData)
                 bordered: true
                 foreground: Ui.Palette.foreground
                 accent: Ui.Palette.accent
@@ -376,11 +376,11 @@ Ui.SectionBody {
         }
 
         Repeater {
-          model: addSpacer.choosing ? ["left", "center", "right"] : []
+          model: addSpacer.choosing ? page.sectionKeys : []
           delegate: Button {
             required property var modelData
             anchors.verticalCenter: parent.verticalCenter
-            text: modelData === "left" ? "Left" : modelData === "center" ? "Center" : "Right"
+            text: page.sectionTitle(modelData)
             bordered: true
             foreground: Ui.Palette.foreground
             accent: Ui.Palette.accent
