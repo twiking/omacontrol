@@ -60,10 +60,10 @@ jsonc_to_json() {
 
 # User extensions override defaults under the same id, the way the menu itself
 # merges them.
-# Parsed once per process. A state read asks for five groups — browser,
-# terminal, editor, DNS, agents — and each one was re-reading and re-merging
-# both menu files: the definition cannot change underneath a single read, and
-# four fifths of that work bought nothing. It was the largest single cost in
+# Parsed once per process. A state read asks for six groups — browser,
+# terminal, editor, file manager, DNS, agents — and each one was re-reading and
+# re-merging both menu files: the definition cannot change underneath a single
+# read, and five sixths of that work bought nothing. It was the largest single cost in
 # a state read, and every button in the window pays for a state read.
 MENU_ENTRIES_CACHE=""
 

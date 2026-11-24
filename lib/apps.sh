@@ -113,13 +113,18 @@ apps_state() {
   par_run editor capture omarchy-default-editor
   par_run terminal capture omarchy-default-terminal
   par_run agent capture omarchy-default-agent
+  # Asked of the folder association itself rather than a default-* command:
+  # it names the desktop entry exactly, and every Omarchy has one.
+  par_run filemanager capture xdg-mime query default inode/directory
   par_wait
   roles=$(jq -cn \
     --arg browser "$(par_get browser | head -n1)" \
     --arg editor "$(par_get editor | head -n1)" \
     --arg terminal "$(par_get terminal | head -n1)" \
     --arg agent "$(par_get agent | head -n1)" \
-    '{ Browser: $browser, Editor: $editor, Terminal: $terminal, Agent: $agent }
+    --arg filemanager "$(par_get filemanager | head -n1)" \
+    '{ Browser: $browser, Editor: $editor, Terminal: $terminal, Agent: $agent,
+       "File manager": ($filemanager | rtrimstr(".desktop")) }
      | with_entries(select(.value != ""))')
   par_end
 

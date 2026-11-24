@@ -39,10 +39,10 @@ state_changed() {
 }
 
 # Each group asks the system which of its entries is current, by running the
-# check each entry carries — so the four of them together were the longest
+# check each entry carries — so all of them together were the longest
 # thing in a state read, and asking them one after another inside a single
-# producer made that the critical path. They are four questions, so they are
-# four producers.
+# producer made that the critical path. They are separate questions, so they
+# are separate producers.
 
 # What the Bar page reads, as one expression, because it is read two ways: as
 # part of the whole document, and alone when a bar edit needs nothing else
@@ -145,8 +145,9 @@ state_slice() {
       --argjson browser "$(menu_group_state setup.default.browser)" \
       --argjson terminal "$(menu_group_state setup.default.terminal)" \
       --argjson editor "$(menu_group_state setup.default.editor)" \
+      --argjson filemanager "$(menu_group_state setup.default.filemanager)" \
       --argjson dns "$(menu_group_state setup.network.dns)" \
-      '{ groups: { browser: $browser, terminal: $terminal, editor: $editor, dns: $dns } }' ;;
+      '{ groups: { browser: $browser, terminal: $terminal, editor: $editor, filemanager: $filemanager, dns: $dns } }' ;;
 
     # searchIndex is deliberately absent: half of it is the rest of the
     # document, so it is only ever as fresh as a whole read.
@@ -212,6 +213,7 @@ state() {
   par_run browser menu_group_state setup.default.browser
   par_run terminal menu_group_state setup.default.terminal
   par_run editor menu_group_state setup.default.editor
+  par_run filemanager menu_group_state setup.default.filemanager
   par_run dns menu_group_state setup.network.dns
   par_run iconfonts icon_font_state
   par_run branding branding_state
@@ -247,8 +249,9 @@ state() {
     --argjson browser "$(par_get browser '{}')" \
     --argjson terminal "$(par_get terminal '{}')" \
     --argjson editor "$(par_get editor '{}')" \
+    --argjson filemanager "$(par_get filemanager '{}')" \
     --argjson dns "$(par_get dns '{}')" \
-    '{ browser: $browser, terminal: $terminal, editor: $editor, dns: $dns }')
+    '{ browser: $browser, terminal: $terminal, editor: $editor, filemanager: $filemanager, dns: $dns }')
   iconfonts=$(par_get iconfonts '{}')
   branding=$(par_get branding '{}')
   datetime=$(par_get datetime '{}')
