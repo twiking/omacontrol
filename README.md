@@ -201,8 +201,8 @@ the release channel it follows.
 <td width="50%" valign="top">
 <a href="docs/screenshots/default-apps.png"><img src="docs/screenshots/default-apps.png" alt="Default Apps page"></a><br>
 <b>Default Apps</b><br>
-The browser, terminal, editor and coding agent everything else opens. One
-you have not installed yet is set up the first time you pick it.
+The browser, terminal, editor, file manager and coding agent everything else
+opens. One you have not installed yet is set up the first time you pick it.
 </td>
 <td width="50%" valign="top">
 <a href="docs/screenshots/apps.png"><img src="docs/screenshots/apps.png" alt="Apps page"></a><br>

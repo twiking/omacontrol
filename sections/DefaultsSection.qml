@@ -31,6 +31,18 @@ Ui.SectionBody {
       onPicked: function(next) { page.app.run(["menu", "run", "setup.default.editor." + next]) }
     }
 
+    // Omarchy has no file manager group until omacom/omarchy#10542, and a
+    // picker with nothing in it is a setting with nowhere to go: until the
+    // menu offers the choices, the row is not there.
+    Ui.PickerRow {
+      id: fileManagerRow
+      label: "File manager"
+      visible: !fileManagerRow.searchHidden && fileManagerRow.options.length > 0
+      value: page.app.group("filemanager").current
+      options: page.app.groupOptions("filemanager")
+      onPicked: function(next) { page.app.run(["menu", "run", "setup.default.filemanager." + next]) }
+    }
+
     Ui.PickerRow {
       label: "Coding agent"
       value: page.app.agentsState.current !== undefined ? String(page.app.agentsState.current) : ""
